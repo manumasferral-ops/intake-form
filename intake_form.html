@@ -784,6 +784,13 @@ function renderVehicles() {
           <label>Car location / Ubicación del vehículo</label>
           <input type="text" id="v${id}_location" placeholder="Tow yard, address...">
         </div>
+        <div class="field" style="min-width:140px;">
+          <label>Airbags deployed? / ¿Bolsas de aire?</label>
+          <div class="toggle-group" id="v${id}_airbags-tg">
+            <div class="tog" onclick="tog(this,'v${id}_airbags-tg')">Yes / Sí</div>
+            <div class="tog" onclick="tog(this,'v${id}_airbags-tg')">No</div>
+          </div>
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -1060,6 +1067,8 @@ function generatePDF() {
       if(vd.owner) row([['Owner / Dueño', vd.owner]]);
       const towed = getTog('v'+vd.id+'_towed-tg');
       if(towed) row([['Towed / Grúa', towed],['Car location / Ubicación', vd.location||'']]);
+      const airbags = getTog('v'+vd.id+'_airbags-tg');
+      if(airbags) row([['Airbags deployed / Bolsas de aire', airbags]]);
     });
   }
 
