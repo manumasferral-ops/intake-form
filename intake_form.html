@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Auto Accident Intake Form</title>
+<title>Personal Injury Intake Form</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
 // ============================================================
@@ -275,7 +275,7 @@ renderDraftList();
 
   <div class="header">
     <div>
-      <div class="header-title">Auto Accident Intake Form</div>
+      <div class="header-title">Personal Injury Intake Form</div>
       <div class="header-sub">Personal Injury · Accidente de Auto</div>
     </div>
     <div class="header-date" id="hdate"></div>
@@ -407,10 +407,10 @@ renderDraftList();
         <div class="field">
           <label>Minor <span class="es">/ Menor de edad</span></label>
           <div class="toggle-group" id="minor-tg" style="margin-bottom:6px;">
-            <div class="tog" onclick="tog(this,'minor-tg')">Yes / Sí</div>
-            <div class="tog" onclick="tog(this,'minor-tg')">No</div>
+            <div class="tog" onclick="toggleMinor(this,'minor-tg')">Yes / Sí</div>
+            <div class="tog" onclick="toggleMinor(this,'minor-tg')">No</div>
           </div>
-          <input type="text" id="minor_age" placeholder="Age / Edad">
+          <input type="text" id="minor_age" placeholder="Age / Edad" style="display:none;">
         </div>
         <div class="field" id="f-tel">
           <label>Phone <span class="es">/ Teléfono</span> <span class="required">*</span></label>
@@ -542,6 +542,7 @@ renderDraftList();
           <input type="text" id="prior_medical" placeholder="Medical center name / Centro médico">
         </div>
       </div>
+
     </div>
   </div>
 
@@ -587,7 +588,7 @@ renderDraftList();
           <label class="body-zone"><input type="checkbox" value="Client needs transportation / Necesita transporte"><span>Necesita transporte</span></label>
           <label class="body-zone"><input type="checkbox" value="Client is uninsured / Sin seguro"><span>Sin seguro</span></label>
           <label class="body-zone"><input type="checkbox" value="Police report pending / Reporte policial pendiente"><span>Reporte pendiente</span></label>
-          <label class="body-zone"><input type="checkbox" value="Client missed work / Perdió días de trabajo"><span>Perdió días de trabajo</span></label>
+          
           <label class="body-zone"><input type="checkbox" value="Camera footage available / Hay cámaras"><span>Hay cámaras</span></label>
           <label class="body-zone"><input type="checkbox" value="Witnesses present / Hay testigos"><span>Hay testigos</span></label>
         </div>
@@ -947,12 +948,21 @@ document.addEventListener('input', function(e) {
   }
 });
 
+function toggleMinor(el, groupId) {
+  document.querySelectorAll('#'+groupId+' .tog').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  const ageInput = document.getElementById('minor_age');
+  ageInput.style.display = el.textContent.includes('Yes') ? 'block' : 'none';
+  if (!el.textContent.includes('Yes')) ageInput.value = '';
+}
+
 function clearForm() {
   document.querySelectorAll('input:not([type=checkbox]), textarea, select').forEach(el => el.value = '');
   document.querySelectorAll('input[type=checkbox]').forEach(cb => { cb.checked = false; cb.closest('.body-zone')?.classList.remove('selected'); });
   document.querySelectorAll('.tog').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.field-error').forEach(f => f.classList.remove('field-error'));
   document.getElementById('companion-body').style.display = 'none';
+  const ageEl = document.getElementById('minor_age'); if(ageEl) ageEl.style.display='none';
   const ssnEl = document.getElementById('ssn'); if(ssnEl){ssnEl.disabled=false;ssnEl.style.opacity='1';}
   const translateSw = document.getElementById('translate-sw'); if(translateSw) translateSw.checked=false;
   const transBox = document.getElementById('translation-box'); if(transBox) transBox.style.display='none';
@@ -1013,7 +1023,7 @@ function generatePDF() {
   };
 
   const firm = v('firm');
-  hdr('Auto Accident Intake Form', (firm ? firm+' · ' : '')+'Personal Injury · '+new Date().toLocaleDateString('en-US'));
+  hdr('Personal Injury Intake Form', (firm ? firm+' · ' : '')+'Personal Injury · '+new Date().toLocaleDateString('en-US'));
 
   row([['Case type / Tipo de caso', getTog('casetype-tg')]]);
   sec('Case Info / Información del Caso');
