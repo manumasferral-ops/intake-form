@@ -840,6 +840,13 @@ function getChecked(zoneId) {
 }
 
 // Convert 24h time to 12h AM/PM for the PDF
+function formatDate(d) {
+  if (!d) return '';
+  const parts = d.split('-');
+  if (parts.length !== 3) return d;
+  return parts[1] + '/' + parts[2] + '/' + parts[0];
+}
+
 function formatTime(t) {
   if (!t) return '';
   const [h, m] = t.split(':').map(Number);
@@ -977,7 +984,7 @@ function generatePDF() {
 
   row([['Case type / Tipo de caso', getTog('casetype-tg')]]);
   sec('Case Info / Información del Caso');
-  row([['Source / Fuente',v('source')],['Date of Loss',v('dol')],['Time / Hora',formatTime(v('dol_time'))]]);
+  row([['Source / Fuente',v('source')],['Date of Loss',formatDate(v('dol'))],['Time / Hora',formatTime(v('dol_time'))]]);
   row([['Fault / Responsabilidad',v('fault')],['Client position',v('position')]]);
   const policeVal = getTog('police-tg') + (v('police_report_num') ? ' — Report #: '+v('police_report_num') : '');
   row([['Police / Policía', policeVal],['Rideshare',getTog('rideshare-tg')]]);
@@ -990,7 +997,7 @@ function generatePDF() {
   }
 
   sec('Client Info / Información del Cliente');
-  row([['Full name / Nombre',v('name')],['DOB / Nacimiento',v('dob')]]);
+  row([['Full name / Nombre',v('name')],['DOB / Nacimiento',formatDate(v('dob'))]]);
   row([['Phone / Teléfono',v('tel')],['Email / Correo',v('email')]]);
   fld('Address / Dirección', [v('address'),v('city'),v('state'),v('zip')].filter(Boolean).join(', '));
   const ssnVal = document.getElementById('ssn').disabled ? document.getElementById('ssn').value : v('ssn');
@@ -1038,7 +1045,7 @@ function generatePDF() {
 
   if (document.getElementById('comp-switch').checked) {
     sec('Companion / Acompañante');
-    row([['Full name',v('c_name')],['DOB',v('c_dob')]]);
+    row([['Full name',v('c_name')],['DOB',formatDate(v('c_dob'))]]);
     row([['Phone',v('c_tel')],['Email',v('c_email')]]);
     fld('Address', [v('c_address'),v('c_city'),v('c_state'),v('c_zip')].filter(Boolean).join(', '));
     row([['Marital',v('c_marital')],['SSN last 4',v('c_ssn')],['Emergency',v('c_emergency')]]);
