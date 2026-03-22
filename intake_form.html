@@ -532,15 +532,28 @@ renderDraftList();
         <label>Prior accidents or claims <span class="es">/ Accidentes o reclamos previos</span></label>
         <textarea id="priors" placeholder="Describe prior accidents, injuries, or claims..." style="min-height:48px;"></textarea>
       </div>
-      <div class="grid-2 gap-top">
-        <div class="field">
-          <label>Prior law firm <span class="es">/ Firma previa</span></label>
-          <input type="text" id="prior_firm" placeholder="Law firm name / Nombre de firma">
+      <div class="field gap-top">
+        <label>Had a prior attorney? <span class="es">/ ¿Tenía abogado previo?</span></label>
+        <div class="toggle-group" id="prior-attorney-tg" style="margin-bottom:6px;">
+          <div class="tog" onclick="togglePriorAttorney(this,'prior-attorney-tg')">Yes / Sí</div>
+          <div class="tog" onclick="togglePriorAttorney(this,'prior-attorney-tg')">No</div>
         </div>
-        <div class="field">
-          <label>Prior medical center <span class="es">/ Centro médico previo</span></label>
-          <input type="text" id="prior_medical" placeholder="Medical center name / Centro médico">
+        <div id="prior-attorney-details" style="display:none;">
+          <div class="grid-2" style="margin-top:8px;">
+            <div class="field">
+              <label>Prior law firm <span class="es">/ Firma previa</span></label>
+              <input type="text" id="prior_firm" placeholder="Law firm name / Nombre de firma">
+            </div>
+            <div class="field">
+              <label>Prior medical center <span class="es">/ Centro médico previo</span></label>
+              <input type="text" id="prior_medical" placeholder="Medical center / Centro médico">
+            </div>
+          </div>
         </div>
+      </div>
+      <div class="field gap-top">
+        <label>Referred medical center <span class="es">/ Centro médico referido por nosotros</span></label>
+        <input type="text" id="referred_medical" placeholder="Medical center we are referring / Centro que referimos">
       </div>
 
     </div>
@@ -948,6 +961,18 @@ document.addEventListener('input', function(e) {
   }
 });
 
+function togglePriorAttorney(el, groupId) {
+  document.querySelectorAll('#'+groupId+' .tog').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  const details = document.getElementById('prior-attorney-details');
+  const show = el.textContent.includes('Yes');
+  details.style.display = show ? 'block' : 'none';
+  if (!show) {
+    document.getElementById('prior_firm').value = '';
+    document.getElementById('prior_medical').value = '';
+  }
+}
+
 function toggleMinor(el, groupId) {
   document.querySelectorAll('#'+groupId+' .tog').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
@@ -963,6 +988,7 @@ function clearForm() {
   document.querySelectorAll('.field-error').forEach(f => f.classList.remove('field-error'));
   document.getElementById('companion-body').style.display = 'none';
   const ageEl = document.getElementById('minor_age'); if(ageEl) ageEl.style.display='none';
+  const priorDet = document.getElementById('prior-attorney-details'); if(priorDet) priorDet.style.display='none';
   const ssnEl = document.getElementById('ssn'); if(ssnEl){ssnEl.disabled=false;ssnEl.style.opacity='1';}
   const translateSw = document.getElementById('translate-sw'); if(translateSw) translateSw.checked=false;
   const transBox = document.getElementById('translation-box'); if(transBox) transBox.style.display='none';
@@ -1058,7 +1084,12 @@ function generatePDF() {
   const workDays = v('work_lost_days');
   if(workLost) row([['Days of work lost / Días perdidos', workLost + (workDays ? ' — ' + workDays + ' days' : '')]]);
   fld('Prior claims / Reclamos previos', v('priors'));
-  row([['Prior firm / Firma previa', v('prior_firm')],['Prior medical / Centro médico previo', v('prior_medical')]]);
+  const priorAtty = getTog('prior-attorney-tg');
+  if(priorAtty === 'Yes / Sí') {
+    row([['Prior attorney / Abogado previo', priorAtty],['Prior firm / Firma previa', v('prior_firm')]]);
+    if(v('prior_medical')) row([['Prior medical / Centro médico previo', v('prior_medical')]]);
+  }
+  if(v('referred_medical')) row([['Referred medical / Centro referido', v('referred_medical')]]);
 
   // Vehicles — only print section if at least one vehicle has data
   const vehicleData = vehicles.map((id, idx) => ({
