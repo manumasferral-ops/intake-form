@@ -5,7 +5,151 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Auto Accident Intake Form</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
+// ============================================================
+// DRAFT SAVE / RESTORE SYSTEM
+// Saves all form data to localStorage under named draft slots
+// ============================================================
+const DRAFT_KEY = 'intake_drafts';
+let currentDraftId = null;
+
+function getDrafts() {
+  try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || '{}'); } catch(e) { return {}; }
+}
+function setDrafts(d) { localStorage.setItem(DRAFT_KEY, JSON.stringify(d)); }
+
+function collectFormData() {
+  const data = { vehicles: [], companion: false, toggles: {}, checkboxes: {}, fields: {} };
+  // Regular fields
+  document.querySelectorAll('input:not([type=checkbox]):not([type=file]), textarea, select').forEach(el => {
+    if (el.id) data.fields[el.id] = el.value;
+  });
+  // Toggle buttons
+  document.querySelectorAll('[id$="-tg"]').forEach(grp => {
+    const active = grp.querySelector('.tog.active');
+    data.toggles[grp.id] = active ? active.textContent.trim() : '';
+  });
+  // Checkboxes (body zones)
+  document.querySelectorAll('input[type=checkbox]').forEach(cb => {
+    if (cb.value) data.checkboxes[cb.value + '_' + (cb.closest('#c_body-zones') ? 'c' : 'm')] = cb.checked;
+  });
+  // Companion switch
+  data.companion = document.getElementById('comp-switch').checked;
+  // Vehicles
+  data.vehicles = vehicles.slice();
+  data.vCounter = vCounter;
+  vehicles.forEach(id => {
+    ['year','make','model','ins','plate','color','owner','location'].forEach(f => {
+      const el = document.getElementById('v'+id+'_'+f);
+      if (el) data.fields['v'+id+'_'+f] = el.value;
+    });
+  });
+  return data;
+}
+
+function applyFormData(data) {
+  if (!data) return;
+  // Restore vehicles first
+  vehicles = data.vehicles || [];
+  vCounter = data.vCounter || 0;
+  renderVehicles();
+  // Fields
+  Object.keys(data.fields || {}).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = data.fields[id];
+  });
+  // Toggles
+  Object.keys(data.toggles || {}).forEach(groupId => {
+    const val = data.toggles[groupId];
+    if (!val) return;
+    document.querySelectorAll('#'+groupId+' .tog').forEach(t => {
+      t.classList.toggle('active', t.textContent.trim() === val);
+    });
+  });
+  // Checkboxes
+  document.querySelectorAll('input[type=checkbox]').forEach(cb => {
+    if (!cb.value) return;
+    const key = cb.value + '_' + (cb.closest('#c_body-zones') ? 'c' : 'm');
+    if (key in (data.checkboxes || {})) {
+      cb.checked = data.checkboxes[key];
+      cb.closest('.body-zone')?.classList.toggle('selected', cb.checked);
+    }
+  });
+  // Companion
+  const compSw = document.getElementById('comp-switch');
+  compSw.checked = !!data.companion;
+  toggleCompanion(compSw);
+}
+
+function saveDraft() {
+  const drafts = getDrafts();
+  const id = currentDraftId || ('draft_' + Date.now());
+  const clientName = document.getElementById('name')?.value?.trim() || '';
+  const dol = document.getElementById('dol')?.value || '';
+  const label = clientName ? clientName + (dol ? ' · ' + dol : '') : (dol || new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'}));
+  drafts[id] = { id, label, ts: Date.now(), data: collectFormData() };
+  setDrafts(drafts);
+  currentDraftId = id;
+  renderDraftList();
+  showDraftStatus('Saved: ' + label);
+}
+
+function loadDraft(id) {
+  const drafts = getDrafts();
+  if (!drafts[id]) return;
+  currentDraftId = id;
+  applyFormData(drafts[id].data);
+  renderDraftList();
+  showDraftStatus('Loaded: ' + drafts[id].label);
+}
+
+function deleteDraft(id, e) {
+  e.stopPropagation();
+  const drafts = getDrafts();
+  delete drafts[id];
+  setDrafts(drafts);
+  if (currentDraftId === id) { currentDraftId = null; showDraftStatus('Draft deleted'); }
+  renderDraftList();
+}
+
+function newDraft() {
+  currentDraftId = null;
+  clearForm();
+  showDraftStatus('New intake started');
+}
+
+function showDraftStatus(msg) {
+  const el = document.getElementById('draft-status');
+  el.textContent = msg;
+  el.classList.add('saved');
+  setTimeout(() => { el.classList.remove('saved'); el.textContent = currentDraftId ? 'Draft active' : 'No draft saved'; }, 3000);
+}
+
+function renderDraftList() {
+  const drafts = getDrafts();
+  const list = document.getElementById('draft-list');
+  const keys = Object.keys(drafts).sort((a,b) => drafts[b].ts - drafts[a].ts);
+  if (!keys.length) {
+    list.innerHTML = '<span style="font-size:12px;color:var(--text3);">No drafts yet / Sin borradores</span>';
+    return;
+  }
+  list.innerHTML = keys.map(id => {
+    const d = drafts[id];
+    const isActive = id === currentDraftId;
+    return `<span class="draft-slot${isActive?' active':''}" onclick="loadDraft('${id}')" title="Click to load">
+      ${d.label}
+      <span onclick="deleteDraft('${id}',event)" style="margin-left:6px;opacity:0.5;font-size:11px;" title="Delete">✕</span>
+    </span>`;
+  }).join('');
+}
+
+// Auto-save every 30 seconds if there's a current draft
+setInterval(() => { if (currentDraftId) saveDraft(); }, 30000);
+
+// Init draft list on load
+renderDraftList();
+
+</script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -103,6 +247,16 @@
   .body-zone span { font-size: 13px; color: var(--text); }
   .body-zone.selected span { color: var(--accent); font-weight: 500; }
 
+  .draft-bar { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 18px; margin-bottom: 1rem; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: space-between; }
+  .draft-status { font-size: 12px; color: var(--text3); font-family: 'DM Mono', monospace; }
+  .draft-status.saved { color: var(--success, #1a7a4a); }
+  .draft-list { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .draft-slot { font-size: 12px; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); cursor: pointer; transition: all 0.12s; }
+  .draft-slot:hover { border-color: var(--accent-border); color: var(--accent); background: var(--accent-bg); }
+  .draft-slot.active { border-color: var(--accent-border); color: var(--accent); background: var(--accent-bg); font-weight: 500; }
+  .draft-slot.empty { opacity: 0.45; cursor: default; }
+  .draft-slot.empty:hover { border-color: var(--border); color: var(--text2); background: var(--surface2); }
+  :root { --success: #1a7a4a; }
   .btn-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 1.5rem; }
   .btn { font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; padding: 10px 22px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; transition: all 0.15s; }
   .btn:hover { background: var(--surface2); border-color: var(--border2); }
@@ -132,14 +286,27 @@
     <input type="text" id="firm" placeholder="Enter law firm name / Nombre de la firma...">
   </div>
 
+  <div class="firm-bar">
+    <label>Case type / Tipo de caso</label>
+    <div class="toggle-group" id="casetype-tg" style="flex:1;">
+      <div class="tog" onclick="tog(this,'casetype-tg')">Personal Auto</div>
+      <div class="tog" onclick="tog(this,'casetype-tg')">Commercial / Comercial</div>
+      <div class="tog" onclick="tog(this,'casetype-tg')">Trucking / Camión</div>
+      <div class="tog" onclick="tog(this,'casetype-tg')">Slip &amp; Fall</div>
+      <div class="tog" onclick="tog(this,'casetype-tg')">Workers Comp</div>
+      <div class="tog" onclick="tog(this,'casetype-tg')">Rideshare</div>
+      <div class="tog" onclick="tog(this,'casetype-tg')">Other / Otro</div>
+    </div>
+  </div>
+
   <!-- CASE INFO -->
   <div class="section">
     <div class="section-head"><span class="section-head-title">Case Info / Información del Caso</span></div>
     <div class="section-body">
       <div class="grid-3">
-        <div class="field" id="f-file">
-          <label>File / Archivo <span class="required">*</span></label>
-          <input type="text" id="file" placeholder="e.g. AV / Zen">
+        <div class="field" id="f-source">
+          <label>Source / Fuente <span class="required">*</span></label>
+          <input type="text" id="source" placeholder="e.g. AV / Zen">
           <span class="err-msg">Required / Requerido</span>
         </div>
         <div class="field" id="f-dol">
@@ -152,7 +319,14 @@
           <input type="time" id="dol_time">
         </div>
       </div>
-      <div class="grid-2 gap-top">
+      <div class="grid-3 gap-top">
+        <div class="field">
+          <label>State of accident <span class="es">/ Estado del accidente</span></label>
+          <select id="accident_state">
+            <option value="">— Select state —</option>
+            <option>Alabama (AL)</option><option>Alaska (AK)</option><option>Arizona (AZ)</option><option>Arkansas (AR)</option><option>California (CA)</option><option>Colorado (CO)</option><option>Connecticut (CT)</option><option>Delaware (DE)</option><option>Florida (FL)</option><option>Georgia (GA)</option><option>Hawaii (HI)</option><option>Idaho (ID)</option><option>Illinois (IL)</option><option>Indiana (IN)</option><option>Iowa (IA)</option><option>Kansas (KS)</option><option>Kentucky (KY)</option><option>Louisiana (LA)</option><option>Maine (ME)</option><option>Maryland (MD)</option><option>Massachusetts (MA)</option><option>Michigan (MI)</option><option>Minnesota (MN)</option><option>Mississippi (MS)</option><option>Missouri (MO)</option><option>Montana (MT)</option><option>Nebraska (NE)</option><option>Nevada (NV)</option><option>New Hampshire (NH)</option><option>New Jersey (NJ)</option><option>New Mexico (NM)</option><option>New York (NY)</option><option>North Carolina (NC)</option><option>North Dakota (ND)</option><option>Ohio (OH)</option><option>Oklahoma (OK)</option><option>Oregon (OR)</option><option>Pennsylvania (PA)</option><option>Rhode Island (RI)</option><option>South Carolina (SC)</option><option>South Dakota (SD)</option><option>Tennessee (TN)</option><option>Texas (TX)</option><option>Utah (UT)</option><option>Vermont (VT)</option><option>Virginia (VA)</option><option>Washington (WA)</option><option>West Virginia (WV)</option><option>Wisconsin (WI)</option><option>Wyoming (WY)</option>
+          </select>
+        </div>
         <div class="field">
           <label>Fault <span class="es">/ Responsabilidad</span></label>
           <select id="fault">
@@ -176,11 +350,12 @@
       <div class="grid-2 gap-top">
         <div class="field">
           <label>Police report <span class="es">/ Reporte policial</span></label>
-          <div class="toggle-group" id="police-tg">
+          <div class="toggle-group" id="police-tg" style="margin-bottom:6px;">
             <div class="tog" onclick="tog(this,'police-tg')">Yes / Sí</div>
             <div class="tog" onclick="tog(this,'police-tg')">No</div>
             <div class="tog" onclick="tog(this,'police-tg')">Pending / Pendiente</div>
           </div>
+          <input type="text" id="police_report_num" placeholder="Report # / Número de reporte">
         </div>
         <div class="field">
           <label>Rideshare <span class="es">/ Transporte por app</span></label>
@@ -199,8 +374,18 @@
         </div>
       </div>
       <div class="field gap-top">
-        <label>Description of accident <span class="es">/ Descripción del accidente</span></label>
-        <textarea id="description" placeholder="Brief summary of what happened..."></textarea>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
+          <label>Description <span class="es">— type in Spanish / escribe en español</span></label>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:12px;color:var(--text3);">Auto-translate to English ↓</span>
+            <label class="switch"><input type="checkbox" id="translate-sw" onchange="toggleTranslate(this)"><span class="sw-track"></span></label>
+          </div>
+        </div>
+        <textarea id="description" placeholder="Describe el accidente aquí... (se traducirá al inglés automáticamente)"></textarea>
+        <div id="translation-box" style="display:none;margin-top:8px;">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">English translation (auto) / Traducción al inglés</div>
+          <textarea id="description_translated" placeholder="English translation will appear here..." style="min-height:64px;background:var(--surface2);color:var(--text2);"></textarea>
+        </div>
       </div>
     </div>
   </div>
@@ -254,6 +439,10 @@
         </div>
         <div class="field">
           <label>SSN last 4 <span class="es">/ Últimos 4 del SS</span></label>
+          <div class="toggle-group" id="ssn-tg" style="margin-bottom:6px;">
+            <div class="tog" onclick="ssnToggle(this,'ssn-tg')">N/A</div>
+            <div class="tog" onclick="ssnToggle(this,'ssn-tg')">Tourist / Turista</div>
+          </div>
           <input type="text" id="ssn" maxlength="4" placeholder="XXXX" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')">
         </div>
         <div class="field">
@@ -336,6 +525,51 @@
     <div class="section-body">
       <div class="vehicle-list" id="vehicle-list"></div>
       <button class="add-vehicle-btn" onclick="addVehicle()">+ Add vehicle / Agregar vehículo</button>
+    </div>
+  </div>
+
+  <!-- NOTES & CLIENT RATING -->
+  <div class="section">
+    <div class="section-head"><span class="section-head-title">Notes & Rating / Notas y Evaluación</span></div>
+    <div class="section-body">
+      <div class="grid-2">
+        <div class="field">
+          <label>Client attitude / Actitud del cliente</label>
+          <div class="toggle-group" id="client-rating-tg">
+            <div class="tog" onclick="tog(this,'client-rating-tg')">😊 Easy / Fácil</div>
+            <div class="tog" onclick="tog(this,'client-rating-tg')">😐 Neutral</div>
+            <div class="tog" onclick="tog(this,'client-rating-tg')">😤 Difficult / Difícil</div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Follow-up needed / Seguimiento necesario</label>
+          <div class="toggle-group" id="followup-tg">
+            <div class="tog" onclick="tog(this,'followup-tg')">Yes / Sí</div>
+            <div class="tog" onclick="tog(this,'followup-tg')">No</div>
+          </div>
+        </div>
+      </div>
+      <div class="field gap-top">
+        <label>Quick notes / Notas rápidas <span class="es">(select all that apply)</span></label>
+        <div class="body-zones" id="quick-notes-zones" style="grid-template-columns:repeat(2,minmax(0,1fr));">
+          <label class="body-zone"><input type="checkbox" value="Client does not speak English / No habla inglés"><span>No habla inglés</span></label>
+          <label class="body-zone"><input type="checkbox" value="Client has prior attorney / Tenía abogado previo"><span>Tenía abogado previo</span></label>
+          <label class="body-zone"><input type="checkbox" value="Client is undocumented / Indocumentado"><span>Indocumentado</span></label>
+          <label class="body-zone"><input type="checkbox" value="Client is a tourist / Turista"><span>Turista</span></label>
+          <label class="body-zone"><input type="checkbox" value="Liability is disputed / Responsabilidad en disputa"><span>Responsabilidad en disputa</span></label>
+          <label class="body-zone"><input type="checkbox" value="Soft tissue injuries only / Solo lesiones de tejido blando"><span>Solo tejido blando</span></label>
+          <label class="body-zone"><input type="checkbox" value="Client needs transportation / Necesita transporte"><span>Necesita transporte</span></label>
+          <label class="body-zone"><input type="checkbox" value="Client is uninsured / Sin seguro"><span>Sin seguro</span></label>
+          <label class="body-zone"><input type="checkbox" value="Police report pending / Reporte policial pendiente"><span>Reporte pendiente</span></label>
+          <label class="body-zone"><input type="checkbox" value="Client missed work / Perdió días de trabajo"><span>Perdió días de trabajo</span></label>
+          <label class="body-zone"><input type="checkbox" value="Camera footage available / Hay cámaras"><span>Hay cámaras</span></label>
+          <label class="body-zone"><input type="checkbox" value="Witnesses present / Hay testigos"><span>Hay testigos</span></label>
+        </div>
+      </div>
+      <div class="field gap-top">
+        <label>Additional notes / Notas adicionales</label>
+        <textarea id="intake_notes" placeholder="Any other important details about this intake..." style="min-height:80px;"></textarea>
+      </div>
     </div>
   </div>
 
@@ -427,6 +661,18 @@
     </div>
   </div>
 
+  <div class="draft-bar">
+    <div>
+      <div style="font-size:12px;font-weight:500;color:var(--text2);margin-bottom:4px;">Saved drafts / Borradores guardados</div>
+      <div class="draft-list" id="draft-list"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <span class="draft-status" id="draft-status">No draft saved</span>
+      <button class="btn" onclick="saveDraft()" style="padding:6px 14px;font-size:13px;">Save draft / Guardar borrador</button>
+      <button class="btn" onclick="newDraft()" style="padding:6px 14px;font-size:13px;">New / Nuevo</button>
+    </div>
+  </div>
+
   <div class="btn-row">
     <button class="btn btn-primary" onclick="generatePDF()">Export PDF / Exportar PDF</button>
     <button class="btn" onclick="clearForm()">Clear / Limpiar</button>
@@ -477,7 +723,7 @@ function renderVehicles() {
   // Preserve existing values before re-render
   const saved = {};
   vehicles.forEach(id => {
-    ['year','make','model','ins','plate'].forEach(f => {
+    ['year','make','model','ins','plate','color','owner','location'].forEach(f => {
       const el = document.getElementById('v'+id+'_'+f);
       if (el) saved['v'+id+'_'+f] = el.value;
     });
@@ -497,6 +743,21 @@ function renderVehicles() {
         <div class="field"><label>Model</label><input type="text" id="v${id}_model" placeholder="Camry"></div>
         <div class="field vspan-2"><label>Insurance / Aseguradora</label><input type="text" id="v${id}_ins" placeholder="State Farm — Policy #..."></div>
         <div class="field"><label>Plate / Placa</label><input type="text" id="v${id}_plate" placeholder="ABC-1234"></div>
+        <div class="field"><label>Color</label><input type="text" id="v${id}_color" placeholder="e.g. Red / Rojo"></div>
+        <div class="field vspan-2"><label>Owner / Dueño del vehículo</label><input type="text" id="v${id}_owner" placeholder="Name — Phone"></div>
+      </div>
+      <div style="margin-top:10px;display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+        <div class="field" style="min-width:140px;">
+          <label>Towed away? / ¿Grúa?</label>
+          <div class="toggle-group" id="v${id}_towed-tg">
+            <div class="tog" onclick="tog(this,'v${id}_towed-tg')">Yes / Sí</div>
+            <div class="tog" onclick="tog(this,'v${id}_towed-tg')">No</div>
+          </div>
+        </div>
+        <div class="field" style="flex:1;min-width:180px;">
+          <label>Car location / Ubicación del vehículo</label>
+          <input type="text" id="v${id}_location" placeholder="Tow yard, address...">
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -590,7 +851,7 @@ function formatTime(t) {
 // Required field validation
 function validateForm() {
   const required = [
-    { field: 'f-file', input: 'file' },
+    { field: 'f-file', input: 'source' },
     { field: 'f-dol',  input: 'dol' },
     { field: 'f-name', input: 'name' },
     { field: 'f-tel',  input: 'tel' },
@@ -606,12 +867,55 @@ function validateForm() {
   return ok;
 }
 
+function ssnToggle(el, groupId) {
+  document.querySelectorAll('#'+groupId+' .tog').forEach(t => t.classList.remove('active'));
+  el.classList.toggle('active');
+  const ssnInput = document.getElementById('ssn');
+  if (el.classList.contains('active')) {
+    ssnInput.value = el.textContent.trim();
+    ssnInput.disabled = true;
+    ssnInput.style.opacity = '0.5';
+  } else {
+    ssnInput.value = '';
+    ssnInput.disabled = false;
+    ssnInput.style.opacity = '1';
+  }
+}
+
+function toggleTranslate(sw) {
+  const box = document.getElementById('translation-box');
+  box.style.display = sw.checked ? 'block' : 'none';
+  if (sw.checked) autoTranslate();
+}
+
+function autoTranslate() {
+  const desc = document.getElementById('description').value.trim();
+  const out = document.getElementById('description_translated');
+  if (!desc) { out.value = ''; return; }
+  out.value = 'Translating...';
+  fetch('https://api.mymemory.translated.net/get?q='+encodeURIComponent(desc)+'&langpair=es|en')
+    .then(r=>r.json())
+    .then(d=>{ out.value = d.responseData?.translatedText || desc; })
+    .catch(()=>{ out.value = '(Translation unavailable — check connection)'; });
+}
+
+// Re-translate when description changes and translate is on
+document.addEventListener('input', function(e) {
+  if (e.target.id === 'description' && document.getElementById('translate-sw').checked) {
+    clearTimeout(window._transTimer);
+    window._transTimer = setTimeout(autoTranslate, 800);
+  }
+});
+
 function clearForm() {
   document.querySelectorAll('input:not([type=checkbox]), textarea, select').forEach(el => el.value = '');
   document.querySelectorAll('input[type=checkbox]').forEach(cb => { cb.checked = false; cb.closest('.body-zone')?.classList.remove('selected'); });
   document.querySelectorAll('.tog').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.field-error').forEach(f => f.classList.remove('field-error'));
   document.getElementById('companion-body').style.display = 'none';
+  const ssnEl = document.getElementById('ssn'); if(ssnEl){ssnEl.disabled=false;ssnEl.style.opacity='1';}
+  const translateSw = document.getElementById('translate-sw'); if(translateSw) translateSw.checked=false;
+  const transBox = document.getElementById('translation-box'); if(transBox) transBox.style.display='none';
   document.getElementById('comp-switch').checked = false;
   document.getElementById('comp-note').textContent = 'No companion / Sin acompañante';
   vehicles = []; vCounter = 0;
@@ -671,17 +975,26 @@ function generatePDF() {
   const firm = v('firm');
   hdr('Auto Accident Intake Form', (firm ? firm+' · ' : '')+'Personal Injury · '+new Date().toLocaleDateString('en-US'));
 
+  row([['Case type / Tipo de caso', getTog('casetype-tg')]]);
   sec('Case Info / Información del Caso');
-  row([['File / Archivo',v('file')],['Date of Loss',v('dol')],['Time / Hora',formatTime(v('dol_time'))]]);
+  row([['Source / Fuente',v('source')],['Date of Loss',v('dol')],['Time / Hora',formatTime(v('dol_time'))]]);
   row([['Fault / Responsabilidad',v('fault')],['Client position',v('position')]]);
-  row([['Police / Policía',getTog('police-tg')],['Rideshare',getTog('rideshare-tg')]]);
-  fld('Description / Descripción', v('description'));
+  const policeVal = getTog('police-tg') + (v('police_report_num') ? ' — Report #: '+v('police_report_num') : '');
+  row([['Police / Policía', policeVal],['Rideshare',getTog('rideshare-tg')]]);
+  row([['State of accident / Estado',v('accident_state')]]);
+  if(document.getElementById('translate-sw')?.checked && v('description_translated')) {
+    fld('Description (English)', v('description_translated'));
+    fld('Original (Spanish)', v('description'));
+  } else {
+    fld('Description', v('description'));
+  }
 
   sec('Client Info / Información del Cliente');
   row([['Full name / Nombre',v('name')],['DOB / Nacimiento',v('dob')]]);
   row([['Phone / Teléfono',v('tel')],['Email / Correo',v('email')]]);
   fld('Address / Dirección', [v('address'),v('city'),v('state'),v('zip')].filter(Boolean).join(', '));
-  row([['Marital / Estado civil',v('marital')],['SSN last 4',v('ssn')],['Emergency contact',v('emergency')]]);
+  const ssnVal = document.getElementById('ssn').disabled ? document.getElementById('ssn').value : v('ssn');
+  row([['Marital / Estado civil',v('marital')],['SSN last 4',ssnVal||v('ssn')],['Emergency contact',v('emergency')]]);
 
   sec('Medical & Employment / Médico y Empleo');
   row([['Hospital',v('hospital')],['Rescue / Rescate',getTog('rescue-tg')],['Treating / Tratamiento',getTog('treating-tg')]]);
@@ -695,16 +1008,32 @@ function generatePDF() {
   const vehicleData = vehicles.map((id, idx) => ({
     num: idx+1, id,
     year: v('v'+id+'_year'), make: v('v'+id+'_make'), model: v('v'+id+'_model'),
-    ins: v('v'+id+'_ins'), plate: v('v'+id+'_plate')
+    ins: v('v'+id+'_ins'), plate: v('v'+id+'_plate'),
+    color: v('v'+id+'_color'), owner: v('v'+id+'_owner'), location: v('v'+id+'_location')
   })).filter(vd => vd.year || vd.make || vd.model || vd.ins || vd.plate);
 
   if (vehicleData.length) {
     sec('Vehicles / Vehículos');
     vehicleData.forEach(vd => {
-      const vstr = [vd.year, vd.make, vd.model].filter(Boolean).join(' ');
+      const vstr = [vd.year, vd.make, vd.model, vd.color].filter(Boolean).join(' · ');
       const lbl = vd.num === 1 ? 'V1 — Client / Cliente' : vd.num === 2 ? 'V2 — Other party / Tercero' : 'V'+vd.num+' — Additional';
       row([[lbl, vstr||'—'],['Insurance / Aseguradora', vd.ins||''],['Plate / Placa', vd.plate||'']]);
+      if(vd.owner) row([['Owner / Dueño', vd.owner]]);
+      const towed = getTog('v'+vd.id+'_towed-tg');
+      if(towed) row([['Towed / Grúa', towed],['Car location / Ubicación', vd.location||'']]);
     });
+  }
+
+  // Notes & rating
+  const rating = getTog('client-rating-tg');
+  const followup = getTog('followup-tg');
+  const qnotes = getChecked('quick-notes-zones');
+  const intakeNotes = v('intake_notes');
+  if(rating||followup||qnotes||intakeNotes) {
+    sec('Notes & Rating / Notas y Evaluación');
+    row([['Client attitude',rating],['Follow-up / Seguimiento',followup]]);
+    fld('Quick notes',qnotes);
+    fld('Additional notes',intakeNotes);
   }
 
   if (document.getElementById('comp-switch').checked) {
