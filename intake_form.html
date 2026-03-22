@@ -552,8 +552,8 @@ renderDraftList();
         </div>
       </div>
       <div class="field gap-top">
-        <label>Referred medical center <span class="es">/ Centro médico referido por nosotros</span></label>
-        <input type="text" id="referred_medical" placeholder="Medical center we are referring / Centro que referimos">
+        <label>Prior medical center <span class="es">/ Centro médico previo</span></label>
+        <input type="text" id="referred_medical" placeholder="Prior medical center / Centro médico previo">
       </div>
 
     </div>
@@ -1089,7 +1089,7 @@ function generatePDF() {
     row([['Prior attorney / Abogado previo', priorAtty],['Prior firm / Firma previa', v('prior_firm')]]);
     if(v('prior_medical')) row([['Prior medical / Centro médico previo', v('prior_medical')]]);
   }
-  if(v('referred_medical')) row([['Referred medical / Centro referido', v('referred_medical')]]);
+  if(v('referred_medical')) row([['Prior medical center / Centro médico previo', v('referred_medical')]]);
 
   // Vehicles — only print section if at least one vehicle has data
   const vehicleData = vehicles.map((id, idx) => ({
