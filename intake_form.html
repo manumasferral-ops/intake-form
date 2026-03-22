@@ -511,6 +511,14 @@ renderDraftList();
         <div class="field"><label>Health insurance <span class="es">/ Seguro médico</span></label><input type="text" id="health_ins" placeholder="Provider name"></div>
         <div class="field"><label>Employer <span class="es">/ Empleador</span></label><input type="text" id="job" placeholder="Company name"></div>
         <div class="field"><label>Hourly wage <span class="es">/ Salario por hora</span></label><input type="text" id="wage" placeholder="$0.00"></div>
+        <div class="field">
+          <label>Days of work lost <span class="es">/ Días de trabajo perdidos</span></label>
+          <div class="toggle-group" id="work-lost-tg" style="margin-bottom:6px;">
+            <div class="tog" onclick="tog(this,'work-lost-tg')">Yes / Sí</div>
+            <div class="tog" onclick="tog(this,'work-lost-tg')">No</div>
+          </div>
+          <input type="text" id="work_lost_days" placeholder="How many days? / ¿Cuántos días?">
+        </div>
       </div>
       <div class="field gap-top">
         <label>Prior accidents or claims <span class="es">/ Accidentes o reclamos previos</span></label>
@@ -1009,6 +1017,9 @@ function generatePDF() {
   const injNotes = v('injury_notes');
   fld('Injuries / Lesiones', [inj, injNotes ? 'Notes: '+injNotes : ''].filter(Boolean).join('\n'));
   row([['Health ins.',v('health_ins')],['Employer / Empleador',v('job')],['Wage / Salario',v('wage')]]);
+  const workLost = getTog('work-lost-tg');
+  const workDays = v('work_lost_days');
+  if(workLost) row([['Days of work lost / Días perdidos', workLost + (workDays ? ' — ' + workDays + ' days' : '')]]);
   fld('Prior claims / Reclamos previos', v('priors'));
 
   // Vehicles — only print section if at least one vehicle has data
