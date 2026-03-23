@@ -377,7 +377,95 @@ renderDraftList();
     </div>
   </div>
 
-  <!-- CASE INFO -->
+  <!-- COMPANION -->
+  <div class="section">
+    <div class="section-head"><span class="section-head-title">Companion / Acompañante</span></div>
+    <div class="section-body">
+      <div class="switch-row">
+        <label>Include companion <span style="color:var(--text3);font-weight:400;">/ Incluir acompañante</span></label>
+        <label class="switch">
+          <input type="checkbox" id="comp-switch" onchange="toggleCompanion(this)">
+          <span class="sw-track"></span>
+        </label>
+        <span class="note" id="comp-note">No companion / Sin acompañante</span>
+      </div>
+      <div id="companion-body" style="display:none; margin-top:16px;">
+        <div class="grid-2">
+          <div class="field"><label>Full name <span class="es">/ Nombre completo</span></label><input type="text" id="c_name" placeholder="First Last"></div>
+          <div class="field"><label>Date of birth <span class="es">/ Fecha de nacimiento</span></label><input type="date" id="c_dob"></div>
+          <div class="field"><label>Phone <span class="es">/ Teléfono</span></label><input type="tel" id="c_tel" placeholder="+1 (305) 000-0000"></div>
+          <div class="field"><label>Email <span class="es">/ Correo electrónico</span></label><input type="email" id="c_email" placeholder="example@email.com"></div>
+        </div>
+        <div class="field gap-top">
+          <label>Address <span class="es">/ Dirección</span></label>
+          <div class="address-wrap">
+            <input type="text" id="c_address" placeholder="Start typing address..." autocomplete="off">
+            <div class="address-suggestions" id="c_addr-suggest"></div>
+          </div>
+        </div>
+        <div class="grid-3 gap-top">
+          <div class="field"><label>City <span class="es">/ Ciudad</span></label><input type="text" id="c_city" placeholder="Miami"></div>
+          <div class="field"><label>State <span class="es">/ Estado</span></label><input type="text" id="c_state" placeholder="FL" maxlength="2"></div>
+          <div class="field"><label>ZIP Code</label><input type="text" id="c_zip" placeholder="33101" maxlength="5" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')"></div>
+        </div>
+        <div class="grid-3 gap-top">
+          <div class="field">
+            <label>Marital status <span class="es">/ Estado civil</span></label>
+            <select id="c_marital">
+              <option value="">— Select —</option>
+              <option>Single / Soltero(a)</option>
+              <option>Married / Casado(a)</option>
+              <option>Divorced / Divorciado(a)</option>
+              <option>Widowed / Viudo(a)</option>
+            </select>
+          </div>
+          <div class="field"><label>SSN last 4 <span class="es">/ Últimos 4 SS</span></label><input type="text" id="c_ssn" maxlength="4" placeholder="XXXX" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')"></div>
+          <div class="field"><label>Emergency contact</label><input type="text" id="c_emergency" placeholder="Name — Phone"></div>
+        </div>
+        <div class="grid-3 gap-top">
+          <div class="field"><label>Hospital</label><input type="text" id="c_hospital" placeholder="Hospital name"></div>
+          <div class="field">
+            <label>Rescue <span class="es">/ Rescate</span></label>
+            <div class="toggle-group" id="c_rescue-tg">
+              <div class="tog" onclick="tog(this,'c_rescue-tg')">Yes / Sí</div>
+              <div class="tog" onclick="tog(this,'c_rescue-tg')">No</div>
+            </div>
+          </div>
+          <div class="field"><label>Health insurance <span class="es">/ Seguro médico</span></label><input type="text" id="c_health_ins" placeholder="Provider name"></div>
+        </div>
+        <div class="field gap-top">
+          <label>Injuries <span class="es">/ Lesiones</span></label>
+          <div class="body-zones" id="c_body-zones">
+            <label class="body-zone"><input type="checkbox" value="Head / Cabeza"><span>Head / Cabeza</span></label>
+            <label class="body-zone"><input type="checkbox" value="Face / Cara"><span>Face / Cara</span></label>
+            <label class="body-zone"><input type="checkbox" value="Neck / Cuello"><span>Neck / Cuello</span></label>
+            <label class="body-zone"><input type="checkbox" value="Left shoulder / Hombro izq."><span>Left shoulder / Hombro izq.</span></label>
+            <label class="body-zone"><input type="checkbox" value="Right shoulder / Hombro der."><span>Right shoulder / Hombro der.</span></label>
+            <label class="body-zone"><input type="checkbox" value="Upper back / Espalda alta"><span>Upper back / Espalda alta</span></label>
+            <label class="body-zone"><input type="checkbox" value="Lower back / Espalda baja"><span>Lower back / Espalda baja</span></label>
+            <label class="body-zone"><input type="checkbox" value="Chest / Pecho"><span>Chest / Pecho</span></label>
+            <label class="body-zone"><input type="checkbox" value="Left arm / Brazo izq."><span>Left arm / Brazo izq.</span></label>
+            <label class="body-zone"><input type="checkbox" value="Right arm / Brazo der."><span>Right arm / Brazo der.</span></label>
+            <label class="body-zone"><input type="checkbox" value="Left knee / Rodilla izq."><span>Left knee / Rodilla izq.</span></label>
+            <label class="body-zone"><input type="checkbox" value="Right knee / Rodilla der."><span>Right knee / Rodilla der.</span></label>
+            <label class="body-zone"><input type="checkbox" value="Left leg / Pierna izq."><span>Left leg / Pierna izq.</span></label>
+            <label class="body-zone"><input type="checkbox" value="Right leg / Pierna der."><span>Right leg / Pierna der.</span></label>
+          </div>
+          <textarea id="c_injury_notes" placeholder="Additional notes..." style="min-height:48px; margin-top:8px;"></textarea>
+        </div>
+        <div class="grid-2 gap-top">
+          <div class="field"><label>Employer <span class="es">/ Empleador</span></label><input type="text" id="c_job" placeholder="Company name"></div>
+          <div class="field"><label>Hourly wage <span class="es">/ Salario por hora</span></label><input type="text" id="c_wage" placeholder="$0.00"></div>
+        </div>
+        <div class="field gap-top">
+          <label>Prior accidents or claims <span class="es">/ Reclamos previos</span></label>
+          <textarea id="c_priors" placeholder="Details..." style="min-height:48px;"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <!-- CASE INFO -->
   <div class="section">
     <div class="section-head"><span class="section-head-title">Case Info / Información del Caso</span></div>
     <div class="section-body">
@@ -535,6 +623,33 @@ renderDraftList();
         </div>
       </div>
       <div style="margin-top:12px;"></div>
+            <div class="grid-2 gap-top">
+        <div class="field">
+          <label>Police report <span class="es">/ Reporte policial</span></label>
+          <div class="toggle-group" id="police-tg" style="margin-bottom:6px;">
+            <div class="tog" onclick="tog(this,'police-tg')">Yes / Sí</div>
+            <div class="tog" onclick="tog(this,'police-tg')">No</div>
+            <div class="tog" onclick="tog(this,'police-tg')">Pending / Pendiente</div>
+          </div>
+          <input type="text" id="police_report_num" placeholder="Report # / Número de reporte">
+        </div>
+        <div class="field">
+          <label>Rideshare <span class="es">/ Transporte por app</span></label>
+          <div class="toggle-group" id="rideshare-tg">
+            <div class="tog" onclick="tog(this,'rideshare-tg')">Uber</div>
+            <div class="tog" onclick="tog(this,'rideshare-tg')">Lyft</div>
+            <div class="tog" onclick="tog(this,'rideshare-tg')">DoorDash</div>
+            <div class="tog" onclick="tog(this,'rideshare-tg')">Instacart</div>
+            <div class="tog" onclick="tog(this,'rideshare-tg')">Amazon Flex</div>
+            <div class="tog" onclick="tog(this,'rideshare-tg')">Walmart Spark</div>
+            <div class="tog" onclick="tog(this,'rideshare-tg')">Spark Drive</div>
+            <div class="tog" onclick="tog(this,'rideshare-tg')">Shipt</div>
+            <div class="tog" onclick="tog(this,'rideshare-tg')">Grubhub</div>
+            <div class="tog" onclick="tog(this,'rideshare-tg')">None / Ninguno</div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:12px;"></div>
       <div class="vehicle-list" id="vehicle-list"></div>
       <button class="add-vehicle-btn" onclick="addVehicle()">+ Add vehicle / Agregar vehículo</button>
     </div>
@@ -585,93 +700,7 @@ renderDraftList();
     </div>
   </div>
 
-  <!-- COMPANION -->
-  <div class="section">
-    <div class="section-head"><span class="section-head-title">Companion / Acompañante</span></div>
-    <div class="section-body">
-      <div class="switch-row">
-        <label>Include companion <span style="color:var(--text3);font-weight:400;">/ Incluir acompañante</span></label>
-        <label class="switch">
-          <input type="checkbox" id="comp-switch" onchange="toggleCompanion(this)">
-          <span class="sw-track"></span>
-        </label>
-        <span class="note" id="comp-note">No companion / Sin acompañante</span>
-      </div>
-      <div id="companion-body" style="display:none; margin-top:16px;">
-        <div class="grid-2">
-          <div class="field"><label>Full name <span class="es">/ Nombre completo</span></label><input type="text" id="c_name" placeholder="First Last"></div>
-          <div class="field"><label>Date of birth <span class="es">/ Fecha de nacimiento</span></label><input type="date" id="c_dob"></div>
-          <div class="field"><label>Phone <span class="es">/ Teléfono</span></label><input type="tel" id="c_tel" placeholder="+1 (305) 000-0000"></div>
-          <div class="field"><label>Email <span class="es">/ Correo electrónico</span></label><input type="email" id="c_email" placeholder="example@email.com"></div>
-        </div>
-        <div class="field gap-top">
-          <label>Address <span class="es">/ Dirección</span></label>
-          <div class="address-wrap">
-            <input type="text" id="c_address" placeholder="Start typing address..." autocomplete="off">
-            <div class="address-suggestions" id="c_addr-suggest"></div>
-          </div>
-        </div>
-        <div class="grid-3 gap-top">
-          <div class="field"><label>City <span class="es">/ Ciudad</span></label><input type="text" id="c_city" placeholder="Miami"></div>
-          <div class="field"><label>State <span class="es">/ Estado</span></label><input type="text" id="c_state" placeholder="FL" maxlength="2"></div>
-          <div class="field"><label>ZIP Code</label><input type="text" id="c_zip" placeholder="33101" maxlength="5" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')"></div>
-        </div>
-        <div class="grid-3 gap-top">
-          <div class="field">
-            <label>Marital status <span class="es">/ Estado civil</span></label>
-            <select id="c_marital">
-              <option value="">— Select —</option>
-              <option>Single / Soltero(a)</option>
-              <option>Married / Casado(a)</option>
-              <option>Divorced / Divorciado(a)</option>
-              <option>Widowed / Viudo(a)</option>
-            </select>
-          </div>
-          <div class="field"><label>SSN last 4 <span class="es">/ Últimos 4 SS</span></label><input type="text" id="c_ssn" maxlength="4" placeholder="XXXX" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')"></div>
-          <div class="field"><label>Emergency contact</label><input type="text" id="c_emergency" placeholder="Name — Phone"></div>
-        </div>
-        <div class="grid-3 gap-top">
-          <div class="field"><label>Hospital</label><input type="text" id="c_hospital" placeholder="Hospital name"></div>
-          <div class="field">
-            <label>Rescue <span class="es">/ Rescate</span></label>
-            <div class="toggle-group" id="c_rescue-tg">
-              <div class="tog" onclick="tog(this,'c_rescue-tg')">Yes / Sí</div>
-              <div class="tog" onclick="tog(this,'c_rescue-tg')">No</div>
-            </div>
-          </div>
-          <div class="field"><label>Health insurance <span class="es">/ Seguro médico</span></label><input type="text" id="c_health_ins" placeholder="Provider name"></div>
-        </div>
-        <div class="field gap-top">
-          <label>Injuries <span class="es">/ Lesiones</span></label>
-          <div class="body-zones" id="c_body-zones">
-            <label class="body-zone"><input type="checkbox" value="Head / Cabeza"><span>Head / Cabeza</span></label>
-            <label class="body-zone"><input type="checkbox" value="Face / Cara"><span>Face / Cara</span></label>
-            <label class="body-zone"><input type="checkbox" value="Neck / Cuello"><span>Neck / Cuello</span></label>
-            <label class="body-zone"><input type="checkbox" value="Left shoulder / Hombro izq."><span>Left shoulder / Hombro izq.</span></label>
-            <label class="body-zone"><input type="checkbox" value="Right shoulder / Hombro der."><span>Right shoulder / Hombro der.</span></label>
-            <label class="body-zone"><input type="checkbox" value="Upper back / Espalda alta"><span>Upper back / Espalda alta</span></label>
-            <label class="body-zone"><input type="checkbox" value="Lower back / Espalda baja"><span>Lower back / Espalda baja</span></label>
-            <label class="body-zone"><input type="checkbox" value="Chest / Pecho"><span>Chest / Pecho</span></label>
-            <label class="body-zone"><input type="checkbox" value="Left arm / Brazo izq."><span>Left arm / Brazo izq.</span></label>
-            <label class="body-zone"><input type="checkbox" value="Right arm / Brazo der."><span>Right arm / Brazo der.</span></label>
-            <label class="body-zone"><input type="checkbox" value="Left knee / Rodilla izq."><span>Left knee / Rodilla izq.</span></label>
-            <label class="body-zone"><input type="checkbox" value="Right knee / Rodilla der."><span>Right knee / Rodilla der.</span></label>
-            <label class="body-zone"><input type="checkbox" value="Left leg / Pierna izq."><span>Left leg / Pierna izq.</span></label>
-            <label class="body-zone"><input type="checkbox" value="Right leg / Pierna der."><span>Right leg / Pierna der.</span></label>
-          </div>
-          <textarea id="c_injury_notes" placeholder="Additional notes..." style="min-height:48px; margin-top:8px;"></textarea>
-        </div>
-        <div class="grid-2 gap-top">
-          <div class="field"><label>Employer <span class="es">/ Empleador</span></label><input type="text" id="c_job" placeholder="Company name"></div>
-          <div class="field"><label>Hourly wage <span class="es">/ Salario por hora</span></label><input type="text" id="c_wage" placeholder="$0.00"></div>
-        </div>
-        <div class="field gap-top">
-          <label>Prior accidents or claims <span class="es">/ Reclamos previos</span></label>
-          <textarea id="c_priors" placeholder="Details..." style="min-height:48px;"></textarea>
-        </div>
-      </div>
-    </div>
-  </div>
+
 
   <div class="draft-bar">
     <div>
