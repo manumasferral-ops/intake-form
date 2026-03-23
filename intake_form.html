@@ -906,19 +906,25 @@ function formatTime(t) {
 // Required field validation
 function validateForm() {
   const required = [
-    { field: 'f-file', input: 'source' },
-    { field: 'f-dol',  input: 'dol' },
-    { field: 'f-name', input: 'name' },
-    { field: 'f-tel',  input: 'tel' },
+    { field: 'f-source', input: 'source' },
+    { field: 'f-dol',    input: 'dol' },
+    { field: 'f-name',   input: 'name' },
+    { field: 'f-tel',    input: 'tel' },
   ];
   let ok = true;
+  let firstErr = null;
   required.forEach(r => {
     const wrap = document.getElementById(r.field);
     const val = v(r.input);
-    if (!val) { wrap.classList.add('field-error'); ok = false; }
-    else wrap.classList.remove('field-error');
+    if (!val) {
+      if (wrap) wrap.classList.add('field-error');
+      if (!firstErr && wrap) firstErr = wrap;
+      ok = false;
+    } else {
+      if (wrap) wrap.classList.remove('field-error');
+    }
   });
-  if (!ok) { document.getElementById('f-source').scrollIntoView({behavior:'smooth', block:'center'}); }
+  if (!ok && firstErr) firstErr.scrollIntoView({behavior:'smooth', block:'center'});
   return ok;
 }
 
