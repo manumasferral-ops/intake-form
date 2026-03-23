@@ -40,7 +40,7 @@ function collectFormData() {
   data.vehicles = vehicles.slice();
   data.vCounter = vCounter;
   vehicles.forEach(id => {
-    ['year','make','model','ins','plate','color','owner','location'].forEach(f => {
+    ['year','make','model','ins','plate','color','owner','location','claim'].forEach(f => {
       const el = document.getElementById('v'+id+'_'+f);
       if (el) data.fields['v'+id+'_'+f] = el.value;
     });
@@ -336,6 +336,7 @@ renderDraftList();
             <option>Client / Cliente responsable</option>
             <option>Shared / Compartida</option>
             <option>Unknown / Desconocido</option>
+            <option>No fault / No culpable</option>
           </select>
         </div>
         <div class="field">
@@ -349,6 +350,13 @@ renderDraftList();
         </div>
       </div>
       <div class="grid-2 gap-top">
+        <div class="field">
+          <label>Companion in vehicle <span class="es">/ ¿Acompañado?</span></label>
+          <div class="toggle-group" id="accompanied-tg">
+            <div class="tog" onclick="tog(this,'accompanied-tg')">Yes / Sí</div>
+            <div class="tog" onclick="tog(this,'accompanied-tg')">No</div>
+          </div>
+        </div>
         <div class="field">
           <label>Police report <span class="es">/ Reporte policial</span></label>
           <div class="toggle-group" id="police-tg" style="margin-bottom:6px;">
@@ -764,7 +772,7 @@ function renderVehicles() {
   // Preserve existing values before re-render
   const saved = {};
   vehicles.forEach(id => {
-    ['year','make','model','ins','plate','color','owner','location'].forEach(f => {
+    ['year','make','model','ins','plate','color','owner','location','claim'].forEach(f => {
       const el = document.getElementById('v'+id+'_'+f);
       if (el) saved['v'+id+'_'+f] = el.value;
     });
@@ -786,6 +794,7 @@ function renderVehicles() {
         <div class="field"><label>Plate / Placa</label><input type="text" id="v${id}_plate" placeholder="ABC-1234"></div>
         <div class="field"><label>Color</label><input type="text" id="v${id}_color" placeholder="e.g. Red / Rojo"></div>
         <div class="field vspan-2"><label>Owner / Dueño del vehículo</label><input type="text" id="v${id}_owner" placeholder="Name — Phone"></div>
+        <div class="field vspan-2"><label>Claim # <span class="es">/ Número de reclamo</span></label><input type="text" id="v${id}_claim" placeholder="Claim number..."></div>
       </div>
       <div style="margin-top:10px;display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;">
         <div class="field" style="min-width:140px;">
@@ -1064,6 +1073,8 @@ function generatePDF() {
   row([['Fault / Responsabilidad',v('fault')],['Client position',v('position')]]);
   const policeVal = getTog('police-tg') + (v('police_report_num') ? ' — Report #: '+v('police_report_num') : '');
   row([['Police / Policía', policeVal],['Rideshare',getTog('rideshare-tg')]]);
+  const accompanied = getTog('accompanied-tg');
+  if(accompanied) row([['Companion in vehicle / Acompañado', accompanied]]);
   row([['State of accident / Estado',v('accident_state')]]);
   if(document.getElementById('translate-sw')?.checked && v('description_translated')) {
     fld('Description (English)', v('description_translated'));
@@ -1113,6 +1124,7 @@ function generatePDF() {
       const lbl = vd.num === 1 ? 'V1 — Client / Cliente' : vd.num === 2 ? 'V2 — Other party / Tercero' : 'V'+vd.num+' — Additional';
       row([[lbl, vstr||'—'],['Insurance / Aseguradora', vd.ins||''],['Plate / Placa', vd.plate||'']]);
       if(vd.owner) row([['Owner / Dueño', vd.owner]]);
+      if(v('v'+vd.id+'_claim')) row([['Claim #', v('v'+vd.id+'_claim')]]);
       const towed = getTog('v'+vd.id+'_towed-tg');
       if(towed) row([['Towed / Grúa', towed],['Car location / Ubicación', vd.location||'']]);
       const airbags = getTog('v'+vd.id+'_airbags-tg');
