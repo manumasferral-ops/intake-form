@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Personal Injury Intake Form</title>
-<!-- v3 -->
+<title>Auto Accident Intake Form</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
 // ============================================================
@@ -276,7 +275,7 @@ renderDraftList();
 
   <div class="header">
     <div>
-      <div class="header-title">Personal Injury Intake Form</div>
+      <div class="header-title">Auto Accident Intake Form</div>
       <div class="header-sub">Personal Injury · Accidente de Auto</div>
     </div>
     <div class="header-date" id="hdate"></div>
@@ -285,6 +284,14 @@ renderDraftList();
   <div class="firm-bar">
     <label>Law Firm / Firma de abogados</label>
     <input type="text" id="firm" placeholder="Enter law firm name / Nombre de la firma...">
+  </div>
+
+  <div class="firm-bar">
+    <label>Source / Fuente <span style="color:var(--danger);margin-left:2px;">*</span></label>
+    <div id="f-source" style="flex:1;">
+      <input type="text" id="source" placeholder="e.g. AV / Zen" style="min-width:220px;">
+      <span class="err-msg" style="font-size:11px;color:var(--danger);display:none;">Required / Requerido</span>
+    </div>
   </div>
 
   <div class="firm-bar">
@@ -297,105 +304,6 @@ renderDraftList();
       <div class="tog" onclick="tog(this,'casetype-tg')">Workers Comp</div>
       <div class="tog" onclick="tog(this,'casetype-tg')">Rideshare</div>
       <div class="tog" onclick="tog(this,'casetype-tg')">Other / Otro</div>
-    </div>
-  </div>
-
-  <!-- CASE INFO -->
-  <div class="section">
-    <div class="section-head"><span class="section-head-title">Case Info / Información del Caso</span></div>
-    <div class="section-body">
-      <div class="grid-3">
-        <div class="field" id="f-source">
-          <label>Source / Fuente <span class="required">*</span></label>
-          <input type="text" id="source" placeholder="e.g. AV / Zen">
-          <span class="err-msg">Required / Requerido</span>
-        </div>
-        <div class="field" id="f-dol">
-          <label>Date of Loss <span class="es">/ Fecha del Accidente</span> <span class="required">*</span></label>
-          <input type="date" id="dol">
-          <span class="err-msg">Required / Requerido</span>
-        </div>
-        <div class="field">
-          <label>Approx. Time of Accident <span class="es">/ Hora Aproximada</span></label>
-          <input type="time" id="dol_time">
-        </div>
-      </div>
-      <div class="grid-3 gap-top">
-        <div class="field">
-          <label>State of accident <span class="es">/ Estado del accidente</span></label>
-          <select id="accident_state">
-            <option value="">— Select state —</option>
-            <option>Alabama (AL)</option><option>Alaska (AK)</option><option>Arizona (AZ)</option><option>Arkansas (AR)</option><option>California (CA)</option><option>Colorado (CO)</option><option>Connecticut (CT)</option><option>Delaware (DE)</option><option>Florida (FL)</option><option>Georgia (GA)</option><option>Hawaii (HI)</option><option>Idaho (ID)</option><option>Illinois (IL)</option><option>Indiana (IN)</option><option>Iowa (IA)</option><option>Kansas (KS)</option><option>Kentucky (KY)</option><option>Louisiana (LA)</option><option>Maine (ME)</option><option>Maryland (MD)</option><option>Massachusetts (MA)</option><option>Michigan (MI)</option><option>Minnesota (MN)</option><option>Mississippi (MS)</option><option>Missouri (MO)</option><option>Montana (MT)</option><option>Nebraska (NE)</option><option>Nevada (NV)</option><option>New Hampshire (NH)</option><option>New Jersey (NJ)</option><option>New Mexico (NM)</option><option>New York (NY)</option><option>North Carolina (NC)</option><option>North Dakota (ND)</option><option>Ohio (OH)</option><option>Oklahoma (OK)</option><option>Oregon (OR)</option><option>Pennsylvania (PA)</option><option>Rhode Island (RI)</option><option>South Carolina (SC)</option><option>South Dakota (SD)</option><option>Tennessee (TN)</option><option>Texas (TX)</option><option>Utah (UT)</option><option>Vermont (VT)</option><option>Virginia (VA)</option><option>Washington (WA)</option><option>West Virginia (WV)</option><option>Wisconsin (WI)</option><option>Wyoming (WY)</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Fault <span class="es">/ Responsabilidad</span></label>
-          <select id="fault">
-            <option value="">— Select —</option>
-            <option>Other party / Tercero responsable</option>
-            <option>Client / Cliente responsable</option>
-            <option>Shared / Compartida</option>
-            <option>Unknown / Desconocido</option>
-            <option>No fault / No culpable</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Client position <span class="es">/ Posición del cliente</span></label>
-          <select id="position">
-            <option value="">— Select —</option>
-            <option>Driver / Conductor</option>
-            <option>Passenger / Pasajero</option>
-            <option>Pedestrian / Peatón</option>
-          </select>
-        </div>
-      </div>
-      <div class="grid-2 gap-top">
-        <div class="field">
-          <label>Companion in vehicle <span class="es">/ ¿Acompañado?</span></label>
-          <div class="toggle-group" id="accompanied-tg">
-            <div class="tog" onclick="tog(this,'accompanied-tg')">Yes / Sí</div>
-            <div class="tog" onclick="tog(this,'accompanied-tg')">No</div>
-          </div>
-        </div>
-        <div class="field">
-          <label>Police report <span class="es">/ Reporte policial</span></label>
-          <div class="toggle-group" id="police-tg" style="margin-bottom:6px;">
-            <div class="tog" onclick="tog(this,'police-tg')">Yes / Sí</div>
-            <div class="tog" onclick="tog(this,'police-tg')">No</div>
-            <div class="tog" onclick="tog(this,'police-tg')">Pending / Pendiente</div>
-          </div>
-          <input type="text" id="police_report_num" placeholder="Report # / Número de reporte">
-        </div>
-        <div class="field">
-          <label>Rideshare <span class="es">/ Transporte por app</span></label>
-          <div class="toggle-group" id="rideshare-tg">
-            <div class="tog" onclick="tog(this,'rideshare-tg')">Uber</div>
-            <div class="tog" onclick="tog(this,'rideshare-tg')">Lyft</div>
-            <div class="tog" onclick="tog(this,'rideshare-tg')">DoorDash</div>
-            <div class="tog" onclick="tog(this,'rideshare-tg')">Instacart</div>
-            <div class="tog" onclick="tog(this,'rideshare-tg')">Amazon Flex</div>
-            <div class="tog" onclick="tog(this,'rideshare-tg')">Walmart Spark</div>
-            <div class="tog" onclick="tog(this,'rideshare-tg')">Spark Drive</div>
-            <div class="tog" onclick="tog(this,'rideshare-tg')">Shipt</div>
-            <div class="tog" onclick="tog(this,'rideshare-tg')">Grubhub</div>
-            <div class="tog" onclick="tog(this,'rideshare-tg')">None / Ninguno</div>
-          </div>
-        </div>
-      </div>
-      <div class="field gap-top">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
-          <label>Description <span class="es">— type in Spanish / escribe en español</span></label>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <span style="font-size:12px;color:var(--text3);">Auto-translate to English ↓</span>
-            <label class="switch"><input type="checkbox" id="translate-sw" onchange="toggleTranslate(this)"><span class="sw-track"></span></label>
-          </div>
-        </div>
-        <textarea id="description" placeholder="Describe el accidente aquí... (se traducirá al inglés automáticamente)"></textarea>
-        <div id="translation-box" style="display:none;margin-top:8px;">
-          <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">English translation (auto) / Traducción al inglés</div>
-          <textarea id="description_translated" placeholder="English translation will appear here..." style="min-height:64px;background:var(--surface2);color:var(--text2);"></textarea>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -412,14 +320,6 @@ renderDraftList();
         <div class="field">
           <label>Date of birth <span class="es">/ Fecha de nacimiento</span></label>
           <input type="date" id="dob">
-        </div>
-        <div class="field">
-          <label>Minor <span class="es">/ Menor de edad</span></label>
-          <div class="toggle-group" id="minor-tg" style="margin-bottom:6px;">
-            <div class="tog" onclick="toggleMinor(this,'minor-tg')">Yes / Sí</div>
-            <div class="tog" onclick="toggleMinor(this,'minor-tg')">No</div>
-          </div>
-          <input type="text" id="minor_age" placeholder="Age / Edad" style="display:none;">
         </div>
         <div class="field" id="f-tel">
           <label>Phone <span class="es">/ Teléfono</span> <span class="required">*</span></label>
@@ -465,6 +365,74 @@ renderDraftList();
         <div class="field">
           <label>Emergency contact <span class="es">/ Contacto de emergencia</span></label>
           <input type="text" id="emergency" placeholder="Name — Phone">
+        </div>
+        <div class="field">
+          <label>Accompanied <span class="es">/ ¿Acompañado?</span></label>
+          <div class="toggle-group" id="accompanied-client-tg">
+            <div class="tog" onclick="tog(this,'accompanied-client-tg')">Yes / Sí</div>
+            <div class="tog" onclick="tog(this,'accompanied-client-tg')">No</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CASE INFO -->
+  <div class="section">
+    <div class="section-head"><span class="section-head-title">Case Info / Información del Caso</span></div>
+    <div class="section-body">
+      <div class="grid-3">
+        <div class="field" id="f-dol">
+          <label>Date of Loss <span class="es">/ Fecha del Accidente</span> <span class="required">*</span></label>
+          <input type="date" id="dol">
+          <span class="err-msg">Required / Requerido</span>
+        </div>
+        <div class="field">
+          <label>Approx. Time of Accident <span class="es">/ Hora Aproximada</span></label>
+          <input type="time" id="dol_time">
+        </div>
+      </div>
+      <div class="grid-3 gap-top">
+        <div class="field">
+          <label>State of accident <span class="es">/ Estado del accidente</span></label>
+          <select id="accident_state">
+            <option value="">— Select state —</option>
+            <option>Alabama (AL)</option><option>Alaska (AK)</option><option>Arizona (AZ)</option><option>Arkansas (AR)</option><option>California (CA)</option><option>Colorado (CO)</option><option>Connecticut (CT)</option><option>Delaware (DE)</option><option>Florida (FL)</option><option>Georgia (GA)</option><option>Hawaii (HI)</option><option>Idaho (ID)</option><option>Illinois (IL)</option><option>Indiana (IN)</option><option>Iowa (IA)</option><option>Kansas (KS)</option><option>Kentucky (KY)</option><option>Louisiana (LA)</option><option>Maine (ME)</option><option>Maryland (MD)</option><option>Massachusetts (MA)</option><option>Michigan (MI)</option><option>Minnesota (MN)</option><option>Mississippi (MS)</option><option>Missouri (MO)</option><option>Montana (MT)</option><option>Nebraska (NE)</option><option>Nevada (NV)</option><option>New Hampshire (NH)</option><option>New Jersey (NJ)</option><option>New Mexico (NM)</option><option>New York (NY)</option><option>North Carolina (NC)</option><option>North Dakota (ND)</option><option>Ohio (OH)</option><option>Oklahoma (OK)</option><option>Oregon (OR)</option><option>Pennsylvania (PA)</option><option>Rhode Island (RI)</option><option>South Carolina (SC)</option><option>South Dakota (SD)</option><option>Tennessee (TN)</option><option>Texas (TX)</option><option>Utah (UT)</option><option>Vermont (VT)</option><option>Virginia (VA)</option><option>Washington (WA)</option><option>West Virginia (WV)</option><option>Wisconsin (WI)</option><option>Wyoming (WY)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Fault <span class="es">/ Responsabilidad</span></label>
+          <select id="fault">
+            <option value="">— Select —</option>
+            <option>Other party / Tercero responsable</option>
+            <option>Client / Cliente responsable</option>
+            <option>Shared / Compartida</option>
+            <option>Unknown / Desconocido</option>
+            <option>No fault / No culpable</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Client position <span class="es">/ Posición del cliente</span></label>
+          <select id="position">
+            <option value="">— Select —</option>
+            <option>Driver / Conductor</option>
+            <option>Passenger / Pasajero</option>
+            <option>Pedestrian / Peatón</option>
+          </select>
+        </div>
+      </div>
+      <div class="field gap-top">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
+          <label>Description <span class="es">— type in Spanish / escribe en español</span></label>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:12px;color:var(--text3);">Auto-translate to English ↓</span>
+            <label class="switch"><input type="checkbox" id="translate-sw" onchange="toggleTranslate(this)"><span class="sw-track"></span></label>
+          </div>
+        </div>
+        <textarea id="description" placeholder="Describe el accidente aquí... (se traducirá al inglés automáticamente)"></textarea>
+        <div id="translation-box" style="display:none;margin-top:8px;">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">English translation (auto) / Traducción al inglés</div>
+          <textarea id="description_translated" placeholder="English translation will appear here..." style="min-height:64px;background:var(--surface2);color:var(--text2);"></textarea>
         </div>
       </div>
     </div>
@@ -528,43 +496,11 @@ renderDraftList();
         <div class="field"><label>Health insurance <span class="es">/ Seguro médico</span></label><input type="text" id="health_ins" placeholder="Provider name"></div>
         <div class="field"><label>Employer <span class="es">/ Empleador</span></label><input type="text" id="job" placeholder="Company name"></div>
         <div class="field"><label>Hourly wage <span class="es">/ Salario por hora</span></label><input type="text" id="wage" placeholder="$0.00"></div>
-        <div class="field">
-          <label>Days of work lost <span class="es">/ Días de trabajo perdidos</span></label>
-          <div class="toggle-group" id="work-lost-tg" style="margin-bottom:6px;">
-            <div class="tog" onclick="tog(this,'work-lost-tg')">Yes / Sí</div>
-            <div class="tog" onclick="tog(this,'work-lost-tg')">No</div>
-          </div>
-          <input type="text" id="work_lost_days" placeholder="How many days? / ¿Cuántos días?">
-        </div>
       </div>
       <div class="field gap-top">
         <label>Prior accidents or claims <span class="es">/ Accidentes o reclamos previos</span></label>
         <textarea id="priors" placeholder="Describe prior accidents, injuries, or claims..." style="min-height:48px;"></textarea>
       </div>
-      <div class="field gap-top">
-        <label>Had a prior attorney? <span class="es">/ ¿Tenía abogado previo?</span></label>
-        <div class="toggle-group" id="prior-attorney-tg" style="margin-bottom:6px;">
-          <div class="tog" onclick="togglePriorAttorney(this,'prior-attorney-tg')">Yes / Sí</div>
-          <div class="tog" onclick="togglePriorAttorney(this,'prior-attorney-tg')">No</div>
-        </div>
-        <div id="prior-attorney-details" style="display:none;">
-          <div class="grid-2" style="margin-top:8px;">
-            <div class="field">
-              <label>Prior law firm <span class="es">/ Firma previa</span></label>
-              <input type="text" id="prior_firm" placeholder="Law firm name / Nombre de firma">
-            </div>
-            <div class="field">
-              <label>Prior medical center <span class="es">/ Centro médico previo</span></label>
-              <input type="text" id="prior_medical" placeholder="Medical center / Centro médico">
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="field gap-top">
-        <label>Prior medical center <span class="es">/ Centro médico previo</span></label>
-        <input type="text" id="referred_medical" placeholder="Prior medical center / Centro médico previo">
-      </div>
-
     </div>
   </div>
 
@@ -572,6 +508,33 @@ renderDraftList();
   <div class="section">
     <div class="section-head"><span class="section-head-title">Vehicles / Vehículos</span></div>
     <div class="section-body">
+            <div class="grid-2 gap-top">
+        <div class="field">
+          <label>Police report <span class="es">/ Reporte policial</span></label>
+          <div class="toggle-group" id="police-tg" style="margin-bottom:6px;">
+            <div class="tog" onclick="tog(this,'police-tg')">Yes / Sí</div>
+            <div class="tog" onclick="tog(this,'police-tg')">No</div>
+            <div class="tog" onclick="tog(this,'police-tg')">Pending / Pendiente</div>
+          </div>
+          <input type="text" id="police_report_num" placeholder="Report # / Número de reporte">
+        </div>
+        <div class="field">
+          <label>Rideshare <span class="es">/ Transporte por app</span></label>
+          <div class="toggle-group" id="rideshare-tg">
+            <div class="tog" onclick="tog(this,'rideshare-tg')">Uber</div>
+            <div class="tog" onclick="tog(this,'rideshare-tg')">Lyft</div>
+            <div class="tog" onclick="tog(this,'rideshare-tg')">DoorDash</div>
+            <div class="tog" onclick="tog(this,'rideshare-tg')">Instacart</div>
+            <div class="tog" onclick="tog(this,'rideshare-tg')">Amazon Flex</div>
+            <div class="tog" onclick="tog(this,'rideshare-tg')">Walmart Spark</div>
+            <div class="tog" onclick="tog(this,'rideshare-tg')">Spark Drive</div>
+            <div class="tog" onclick="tog(this,'rideshare-tg')">Shipt</div>
+            <div class="tog" onclick="tog(this,'rideshare-tg')">Grubhub</div>
+            <div class="tog" onclick="tog(this,'rideshare-tg')">None / Ninguno</div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:12px;"></div>
       <div class="vehicle-list" id="vehicle-list"></div>
       <button class="add-vehicle-btn" onclick="addVehicle()">+ Add vehicle / Agregar vehículo</button>
     </div>
@@ -610,7 +573,7 @@ renderDraftList();
           <label class="body-zone"><input type="checkbox" value="Client needs transportation / Necesita transporte"><span>Necesita transporte</span></label>
           <label class="body-zone"><input type="checkbox" value="Client is uninsured / Sin seguro"><span>Sin seguro</span></label>
           <label class="body-zone"><input type="checkbox" value="Police report pending / Reporte policial pendiente"><span>Reporte pendiente</span></label>
-          
+          <label class="body-zone"><input type="checkbox" value="Client missed work / Perdió días de trabajo"><span>Perdió días de trabajo</span></label>
           <label class="body-zone"><input type="checkbox" value="Camera footage available / Hay cámaras"><span>Hay cámaras</span></label>
           <label class="body-zone"><input type="checkbox" value="Witnesses present / Hay testigos"><span>Hay testigos</span></label>
         </div>
@@ -808,13 +771,6 @@ function renderVehicles() {
           <label>Car location / Ubicación del vehículo</label>
           <input type="text" id="v${id}_location" placeholder="Tow yard, address...">
         </div>
-        <div class="field" style="min-width:140px;">
-          <label>Airbags deployed? / ¿Bolsas de aire?</label>
-          <div class="toggle-group" id="v${id}_airbags-tg">
-            <div class="tog" onclick="tog(this,'v${id}_airbags-tg')">Yes / Sí</div>
-            <div class="tog" onclick="tog(this,'v${id}_airbags-tg')">No</div>
-          </div>
-        </div>
       </div>
     </div>`;
   }).join('');
@@ -977,34 +933,12 @@ document.addEventListener('input', function(e) {
   }
 });
 
-function togglePriorAttorney(el, groupId) {
-  document.querySelectorAll('#'+groupId+' .tog').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  const details = document.getElementById('prior-attorney-details');
-  const show = el.textContent.includes('Yes');
-  details.style.display = show ? 'block' : 'none';
-  if (!show) {
-    document.getElementById('prior_firm').value = '';
-    document.getElementById('prior_medical').value = '';
-  }
-}
-
-function toggleMinor(el, groupId) {
-  document.querySelectorAll('#'+groupId+' .tog').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  const ageInput = document.getElementById('minor_age');
-  ageInput.style.display = el.textContent.includes('Yes') ? 'block' : 'none';
-  if (!el.textContent.includes('Yes')) ageInput.value = '';
-}
-
 function clearForm() {
   document.querySelectorAll('input:not([type=checkbox]), textarea, select').forEach(el => el.value = '');
   document.querySelectorAll('input[type=checkbox]').forEach(cb => { cb.checked = false; cb.closest('.body-zone')?.classList.remove('selected'); });
   document.querySelectorAll('.tog').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.field-error').forEach(f => f.classList.remove('field-error'));
   document.getElementById('companion-body').style.display = 'none';
-  const ageEl = document.getElementById('minor_age'); if(ageEl) ageEl.style.display='none';
-  const priorDet = document.getElementById('prior-attorney-details'); if(priorDet) priorDet.style.display='none';
   const ssnEl = document.getElementById('ssn'); if(ssnEl){ssnEl.disabled=false;ssnEl.style.opacity='1';}
   const translateSw = document.getElementById('translate-sw'); if(translateSw) translateSw.checked=false;
   const transBox = document.getElementById('translation-box'); if(transBox) transBox.style.display='none';
@@ -1065,7 +999,7 @@ function generatePDF() {
   };
 
   const firm = v('firm');
-  hdr('Personal Injury Intake Form', (firm ? firm+' · ' : '')+'Personal Injury · '+new Date().toLocaleDateString('en-US'));
+  hdr('Auto Accident Intake Form', (firm ? firm+' · ' : '')+'Personal Injury · '+new Date().toLocaleDateString('en-US'));
 
   row([['Case type / Tipo de caso', getTog('casetype-tg')]]);
   sec('Case Info / Información del Caso');
@@ -1073,8 +1007,6 @@ function generatePDF() {
   row([['Fault / Responsabilidad',v('fault')],['Client position',v('position')]]);
   const policeVal = getTog('police-tg') + (v('police_report_num') ? ' — Report #: '+v('police_report_num') : '');
   row([['Police / Policía', policeVal],['Rideshare',getTog('rideshare-tg')]]);
-  const accompanied = getTog('accompanied-tg');
-  if(accompanied) row([['Companion in vehicle / Acompañado', accompanied]]);
   row([['State of accident / Estado',v('accident_state')]]);
   if(document.getElementById('translate-sw')?.checked && v('description_translated')) {
     fld('Description (English)', v('description_translated'));
@@ -1085,11 +1017,11 @@ function generatePDF() {
 
   sec('Client Info / Información del Cliente');
   row([['Full name / Nombre',v('name')],['DOB / Nacimiento',formatDate(v('dob'))]]);
-  const minorVal = getTog('minor-tg');
-  if(minorVal) row([['Minor / Menor', minorVal + (v('minor_age') ? ' — Age: '+v('minor_age') : '')]]);
   row([['Phone / Teléfono',v('tel')],['Email / Correo',v('email')]]);
   fld('Address / Dirección', [v('address'),v('city'),v('state'),v('zip')].filter(Boolean).join(', '));
   const ssnVal = document.getElementById('ssn').disabled ? document.getElementById('ssn').value : v('ssn');
+  const accComp = getTog('accompanied-client-tg');
+  if(accComp) row([['Accompanied / Acompañado', accComp]]);
   row([['Marital / Estado civil',v('marital')],['SSN last 4',ssnVal||v('ssn')],['Emergency contact',v('emergency')]]);
 
   sec('Medical & Employment / Médico y Empleo');
@@ -1098,16 +1030,7 @@ function generatePDF() {
   const injNotes = v('injury_notes');
   fld('Injuries / Lesiones', [inj, injNotes ? 'Notes: '+injNotes : ''].filter(Boolean).join('\n'));
   row([['Health ins.',v('health_ins')],['Employer / Empleador',v('job')],['Wage / Salario',v('wage')]]);
-  const workLost = getTog('work-lost-tg');
-  const workDays = v('work_lost_days');
-  if(workLost) row([['Days of work lost / Días perdidos', workLost + (workDays ? ' — ' + workDays + ' days' : '')]]);
   fld('Prior claims / Reclamos previos', v('priors'));
-  const priorAtty = getTog('prior-attorney-tg');
-  if(priorAtty === 'Yes / Sí') {
-    row([['Prior attorney / Abogado previo', priorAtty],['Prior firm / Firma previa', v('prior_firm')]]);
-    if(v('prior_medical')) row([['Prior medical / Centro médico previo', v('prior_medical')]]);
-  }
-  if(v('referred_medical')) row([['Prior medical center / Centro médico previo', v('referred_medical')]]);
 
   // Vehicles — only print section if at least one vehicle has data
   const vehicleData = vehicles.map((id, idx) => ({
@@ -1127,8 +1050,6 @@ function generatePDF() {
       if(v('v'+vd.id+'_claim')) row([['Claim #', v('v'+vd.id+'_claim')]]);
       const towed = getTog('v'+vd.id+'_towed-tg');
       if(towed) row([['Towed / Grúa', towed],['Car location / Ubicación', vd.location||'']]);
-      const airbags = getTog('v'+vd.id+'_airbags-tg');
-      if(airbags) row([['Airbags deployed / Bolsas de aire', airbags]]);
     });
   }
 
