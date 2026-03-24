@@ -39,7 +39,7 @@ function collectFormData() {
   data.vehicles = vehicles.slice();
   data.vCounter = vCounter;
   vehicles.forEach(id => {
-    ['year','make','model','ins','plate','color','owner','location','claim'].forEach(f => {
+    ['year','make','model','ins','plate','color','owner','location','claim','belongs'].forEach(f => {
       const el = document.getElementById('v'+id+'_'+f);
       if (el) data.fields['v'+id+'_'+f] = el.value;
     });
@@ -298,7 +298,7 @@ renderDraftList();
     <label>Case type / Tipo de caso</label>
     <div class="toggle-group" id="casetype-tg" style="flex:1;">
       <div class="tog" onclick="tog(this,'casetype-tg')">Personal Auto</div>
-      <div class="tog" onclick="tog(this,'casetype-tg')">Commercial / Comercial</div>
+      <div class="tog" onclick="tog(this,'casetype-tg')">Possible Commercial / Posible Comercial</div>
       <div class="tog" onclick="tog(this,'casetype-tg')">Trucking / Camión</div>
       <div class="tog" onclick="tog(this,'casetype-tg')">Slip &amp; Fall</div>
       <div class="tog" onclick="tog(this,'casetype-tg')">Workers Comp</div>
@@ -366,13 +366,7 @@ renderDraftList();
           <label>Emergency contact <span class="es">/ Contacto de emergencia</span></label>
           <input type="text" id="emergency" placeholder="Name — Phone">
         </div>
-        <div class="field">
-          <label>Accompanied <span class="es">/ ¿Acompañado?</span></label>
-          <div class="toggle-group" id="accompanied-client-tg">
-            <div class="tog" onclick="tog(this,'accompanied-client-tg')">Yes / Sí</div>
-            <div class="tog" onclick="tog(this,'accompanied-client-tg')">No</div>
-          </div>
-        </div>
+
       </div>
     </div>
   </div>
@@ -522,6 +516,7 @@ renderDraftList();
           <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">English translation (auto) / Traducción al inglés</div>
           <textarea id="description_translated" placeholder="English translation will appear here..." style="min-height:64px;background:var(--surface2);color:var(--text2);"></textarea>
         </div>
+
       </div>
     </div>
   </div>
@@ -596,33 +591,6 @@ renderDraftList();
   <div class="section">
     <div class="section-head"><span class="section-head-title">Vehicles / Vehículos</span></div>
     <div class="section-body">
-            <div class="grid-2 gap-top">
-        <div class="field">
-          <label>Police report <span class="es">/ Reporte policial</span></label>
-          <div class="toggle-group" id="police-tg" style="margin-bottom:6px;">
-            <div class="tog" onclick="tog(this,'police-tg')">Yes / Sí</div>
-            <div class="tog" onclick="tog(this,'police-tg')">No</div>
-            <div class="tog" onclick="tog(this,'police-tg')">Pending / Pendiente</div>
-          </div>
-          <input type="text" id="police_report_num" placeholder="Report # / Número de reporte">
-        </div>
-        <div class="field">
-          <label>Rideshare <span class="es">/ Transporte por app</span></label>
-          <div class="toggle-group" id="rideshare-tg">
-            <div class="tog" onclick="tog(this,'rideshare-tg')">Uber</div>
-            <div class="tog" onclick="tog(this,'rideshare-tg')">Lyft</div>
-            <div class="tog" onclick="tog(this,'rideshare-tg')">DoorDash</div>
-            <div class="tog" onclick="tog(this,'rideshare-tg')">Instacart</div>
-            <div class="tog" onclick="tog(this,'rideshare-tg')">Amazon Flex</div>
-            <div class="tog" onclick="tog(this,'rideshare-tg')">Walmart Spark</div>
-            <div class="tog" onclick="tog(this,'rideshare-tg')">Spark Drive</div>
-            <div class="tog" onclick="tog(this,'rideshare-tg')">Shipt</div>
-            <div class="tog" onclick="tog(this,'rideshare-tg')">Grubhub</div>
-            <div class="tog" onclick="tog(this,'rideshare-tg')">None / Ninguno</div>
-          </div>
-        </div>
-      </div>
-      <div style="margin-top:12px;"></div>
             <div class="grid-2 gap-top">
         <div class="field">
           <label>Police report <span class="es">/ Reporte policial</span></label>
@@ -764,7 +732,7 @@ function renderVehicles() {
   // Preserve existing values before re-render
   const saved = {};
   vehicles.forEach(id => {
-    ['year','make','model','ins','plate','color','owner','location','claim'].forEach(f => {
+    ['year','make','model','ins','plate','color','owner','location','claim','belongs'].forEach(f => {
       const el = document.getElementById('v'+id+'_'+f);
       if (el) saved['v'+id+'_'+f] = el.value;
     });
@@ -786,9 +754,17 @@ function renderVehicles() {
         <div class="field"><label>Plate / Placa</label><input type="text" id="v${id}_plate" placeholder="ABC-1234"></div>
         <div class="field"><label>Color</label><input type="text" id="v${id}_color" placeholder="e.g. Red / Rojo"></div>
         <div class="field vspan-2"><label>Owner / Dueño del vehículo</label><input type="text" id="v${id}_owner" placeholder="Name — Phone"></div>
+        <div class="field vspan-2"><label>This vehicle belongs to / <span class="es">Este vehículo es de</span></label><input type="text" id="v${id}_belongs" placeholder="e.g. Our client / Other party / Third party..."></div>
         <div class="field vspan-2"><label>Claim # <span class="es">/ Número de reclamo</span></label><input type="text" id="v${id}_claim" placeholder="Claim number..."></div>
       </div>
       <div style="margin-top:10px;display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+        <div class="field" style="min-width:160px;">
+          <label>Airbags deployed? <span class="es">/ ¿Bolsas de aire?</span></label>
+          <div class="toggle-group" id="v${id}_airbags-tg">
+            <div class="tog" onclick="tog(this,'v${id}_airbags-tg')">Yes / Sí</div>
+            <div class="tog" onclick="tog(this,'v${id}_airbags-tg')">No</div>
+          </div>
+        </div>
         <div class="field" style="min-width:140px;">
           <label>Towed away? / ¿Grúa?</label>
           <div class="toggle-group" id="v${id}_towed-tg">
@@ -1075,8 +1051,11 @@ function generatePDF() {
       const vstr = [vd.year, vd.make, vd.model, vd.color].filter(Boolean).join(' · ');
       const lbl = vd.num === 1 ? 'V1 — Client / Cliente' : vd.num === 2 ? 'V2 — Other party / Tercero' : 'V'+vd.num+' — Additional';
       row([[lbl, vstr||'—'],['Insurance / Aseguradora', vd.ins||''],['Plate / Placa', vd.plate||'']]);
+      if(v('v'+vd.id+'_belongs')) row([["Belongs to / ¿De quién?", v('v'+vd.id+'_belongs')]]);
       if(vd.owner) row([['Owner / Dueño', vd.owner]]);
       if(v('v'+vd.id+'_claim')) row([['Claim #', v('v'+vd.id+'_claim')]]);
+      const airbags = getTog('v'+vd.id+'_airbags-tg');
+      if(airbags) row([['Airbags / Bolsas de aire', airbags]]);
       const towed = getTog('v'+vd.id+'_towed-tg');
       if(towed) row([['Towed / Grúa', towed],['Car location / Ubicación', vd.location||'']]);
     });
