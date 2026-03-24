@@ -307,6 +307,70 @@ renderDraftList();
     </div>
   </div>
 
+  <!-- CASE INFO -->
+  <div class="section">
+    <div class="section-head"><span class="section-head-title">Case Info / Información del Caso</span></div>
+    <div class="section-body">
+      <div class="grid-3">
+        <div class="field" id="f-dol">
+          <label>Date of Loss <span class="es">/ Fecha del Accidente</span> <span class="required">*</span></label>
+          <input type="date" id="dol">
+          <span class="err-msg">Required / Requerido</span>
+        </div>
+        <div class="field">
+          <label>Approx. Time of Accident <span class="es">/ Hora Aproximada</span></label>
+          <input type="time" id="dol_time">
+        </div>
+      </div>
+      <div class="grid-3 gap-top">
+        <div class="field">
+          <label>State of accident <span class="es">/ Estado del accidente</span></label>
+          <select id="accident_state">
+            <option value="">— Select state —</option>
+            <option>Alabama (AL)</option><option>Alaska (AK)</option><option>Arizona (AZ)</option><option>Arkansas (AR)</option><option>California (CA)</option><option>Colorado (CO)</option><option>Connecticut (CT)</option><option>Delaware (DE)</option><option>Florida (FL)</option><option>Georgia (GA)</option><option>Hawaii (HI)</option><option>Idaho (ID)</option><option>Illinois (IL)</option><option>Indiana (IN)</option><option>Iowa (IA)</option><option>Kansas (KS)</option><option>Kentucky (KY)</option><option>Louisiana (LA)</option><option>Maine (ME)</option><option>Maryland (MD)</option><option>Massachusetts (MA)</option><option>Michigan (MI)</option><option>Minnesota (MN)</option><option>Mississippi (MS)</option><option>Missouri (MO)</option><option>Montana (MT)</option><option>Nebraska (NE)</option><option>Nevada (NV)</option><option>New Hampshire (NH)</option><option>New Jersey (NJ)</option><option>New Mexico (NM)</option><option>New York (NY)</option><option>North Carolina (NC)</option><option>North Dakota (ND)</option><option>Ohio (OH)</option><option>Oklahoma (OK)</option><option>Oregon (OR)</option><option>Pennsylvania (PA)</option><option>Rhode Island (RI)</option><option>South Carolina (SC)</option><option>South Dakota (SD)</option><option>Tennessee (TN)</option><option>Texas (TX)</option><option>Utah (UT)</option><option>Vermont (VT)</option><option>Virginia (VA)</option><option>Washington (WA)</option><option>West Virginia (WV)</option><option>Wisconsin (WI)</option><option>Wyoming (WY)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Fault <span class="es">/ Responsabilidad</span></label>
+          <select id="fault">
+            <option value="">— Select —</option>
+            <option>Other party / Tercero responsable</option>
+            <option>Client / Cliente responsable</option>
+            <option>Shared / Compartida</option>
+            <option>Unknown / Desconocido</option>
+            <option>No fault / No culpable</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Client position <span class="es">/ Posición del cliente</span></label>
+          <select id="position">
+            <option value="">— Select —</option>
+            <option>Driver / Conductor</option>
+            <option>Passenger / Pasajero</option>
+            <option>Pedestrian / Peatón</option>
+          </select>
+        </div>
+      </div>
+      <div class="field gap-top">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
+          <label>Description <span class="es">— type in Spanish / escribe en español</span></label>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:12px;color:var(--text3);">Auto-translate to English ↓</span>
+            <label class="switch"><input type="checkbox" id="translate-sw" onchange="toggleTranslate(this)"><span class="sw-track"></span></label>
+          </div>
+        </div>
+        <textarea id="description" placeholder="Describe el accidente aquí... (se traducirá al inglés automáticamente)"></textarea>
+        <div id="translation-box" style="display:none;margin-top:8px;">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">English translation (auto) / Traducción al inglés</div>
+          <textarea id="description_translated" placeholder="English translation will appear here..." style="min-height:64px;background:var(--surface2);color:var(--text2);"></textarea>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+
+
   <!-- CLIENT INFO -->
   <div class="section">
     <div class="section-head"><span class="section-head-title">Client Info / Información del Cliente</span></div>
@@ -370,6 +434,8 @@ renderDraftList();
       </div>
     </div>
   </div>
+
+
 
   <!-- COMPANION -->
   <div class="section">
@@ -459,67 +525,7 @@ renderDraftList();
     </div>
   </div>
 
-    <!-- CASE INFO -->
-  <div class="section">
-    <div class="section-head"><span class="section-head-title">Case Info / Información del Caso</span></div>
-    <div class="section-body">
-      <div class="grid-3">
-        <div class="field" id="f-dol">
-          <label>Date of Loss <span class="es">/ Fecha del Accidente</span> <span class="required">*</span></label>
-          <input type="date" id="dol">
-          <span class="err-msg">Required / Requerido</span>
-        </div>
-        <div class="field">
-          <label>Approx. Time of Accident <span class="es">/ Hora Aproximada</span></label>
-          <input type="time" id="dol_time">
-        </div>
-      </div>
-      <div class="grid-3 gap-top">
-        <div class="field">
-          <label>State of accident <span class="es">/ Estado del accidente</span></label>
-          <select id="accident_state">
-            <option value="">— Select state —</option>
-            <option>Alabama (AL)</option><option>Alaska (AK)</option><option>Arizona (AZ)</option><option>Arkansas (AR)</option><option>California (CA)</option><option>Colorado (CO)</option><option>Connecticut (CT)</option><option>Delaware (DE)</option><option>Florida (FL)</option><option>Georgia (GA)</option><option>Hawaii (HI)</option><option>Idaho (ID)</option><option>Illinois (IL)</option><option>Indiana (IN)</option><option>Iowa (IA)</option><option>Kansas (KS)</option><option>Kentucky (KY)</option><option>Louisiana (LA)</option><option>Maine (ME)</option><option>Maryland (MD)</option><option>Massachusetts (MA)</option><option>Michigan (MI)</option><option>Minnesota (MN)</option><option>Mississippi (MS)</option><option>Missouri (MO)</option><option>Montana (MT)</option><option>Nebraska (NE)</option><option>Nevada (NV)</option><option>New Hampshire (NH)</option><option>New Jersey (NJ)</option><option>New Mexico (NM)</option><option>New York (NY)</option><option>North Carolina (NC)</option><option>North Dakota (ND)</option><option>Ohio (OH)</option><option>Oklahoma (OK)</option><option>Oregon (OR)</option><option>Pennsylvania (PA)</option><option>Rhode Island (RI)</option><option>South Carolina (SC)</option><option>South Dakota (SD)</option><option>Tennessee (TN)</option><option>Texas (TX)</option><option>Utah (UT)</option><option>Vermont (VT)</option><option>Virginia (VA)</option><option>Washington (WA)</option><option>West Virginia (WV)</option><option>Wisconsin (WI)</option><option>Wyoming (WY)</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Fault <span class="es">/ Responsabilidad</span></label>
-          <select id="fault">
-            <option value="">— Select —</option>
-            <option>Other party / Tercero responsable</option>
-            <option>Client / Cliente responsable</option>
-            <option>Shared / Compartida</option>
-            <option>Unknown / Desconocido</option>
-            <option>No fault / No culpable</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Client position <span class="es">/ Posición del cliente</span></label>
-          <select id="position">
-            <option value="">— Select —</option>
-            <option>Driver / Conductor</option>
-            <option>Passenger / Pasajero</option>
-            <option>Pedestrian / Peatón</option>
-          </select>
-        </div>
-      </div>
-      <div class="field gap-top">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
-          <label>Description <span class="es">— type in Spanish / escribe en español</span></label>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <span style="font-size:12px;color:var(--text3);">Auto-translate to English ↓</span>
-            <label class="switch"><input type="checkbox" id="translate-sw" onchange="toggleTranslate(this)"><span class="sw-track"></span></label>
-          </div>
-        </div>
-        <textarea id="description" placeholder="Describe el accidente aquí... (se traducirá al inglés automáticamente)"></textarea>
-        <div id="translation-box" style="display:none;margin-top:8px;">
-          <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">English translation (auto) / Traducción al inglés</div>
-          <textarea id="description_translated" placeholder="English translation will appear here..." style="min-height:64px;background:var(--surface2);color:var(--text2);"></textarea>
-        </div>
-
-      </div>
-    </div>
-  </div>
+  
 
   <!-- MEDICAL & EMPLOYMENT -->
   <div class="section">
@@ -587,6 +593,8 @@ renderDraftList();
     </div>
   </div>
 
+
+
   <!-- VEHICLES -->
   <div class="section">
     <div class="section-head"><span class="section-head-title">Vehicles / Vehículos</span></div>
@@ -622,6 +630,8 @@ renderDraftList();
       <button class="add-vehicle-btn" onclick="addVehicle()">+ Add vehicle / Agregar vehículo</button>
     </div>
   </div>
+
+
 
   <!-- NOTES & CLIENT RATING -->
   <div class="section">
