@@ -337,7 +337,13 @@ renderDraftList();
           <input type="text" id="address" placeholder="Start typing address / Empieza a escribir..." autocomplete="off">
           <div class="address-suggestions" id="addr-suggest"></div>
         </div>
-      </div>        <div class="field">
+      </div>
+
+      <div class="grid-3 gap-top">
+        <div class="field"><label>City <span class="es">/ Ciudad</span></label><input type="text" id="city" placeholder="Miami"></div>
+        <div class="field"><label>State <span class="es">/ Estado</span></label><input type="text" id="state" placeholder="FL" maxlength="2"></div>
+        <div class="field"><label>ZIP Code</label><input type="text" id="zip" placeholder="33101" maxlength="5" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')"></div>
+        <div class="field">
           <label>Marital status <span class="es">/ Estado civil</span></label>
           <select id="marital">
             <option value="">— Select —</option>
@@ -413,12 +419,7 @@ renderDraftList();
             <option>Pedestrian / Peatón</option>
           </select>
         </div>
-      </div>
-      <div class="grid-3 gap-top">
-        <div class="field"><label>City <span class="es">/ Ciudad</span></label><input type="text" id="city" placeholder="Miami"></div>
-        <div class="field"><label>State <span class="es">/ Estado</span></label><input type="text" id="state" placeholder="FL" maxlength="2"></div>
-        <div class="field"><label>ZIP Code</label><input type="text" id="zip" placeholder="33101" maxlength="5" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')"></div>
-      </div>
+      </div>      </div>
     </div>
   </div>
 
