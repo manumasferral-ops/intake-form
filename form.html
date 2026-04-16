@@ -120,10 +120,33 @@
   .btn-primary:hover { background: #333330; }
   .share-info { font-size: 12px; color: var(--text3); }
 
+  .bz-full { grid-column: 1 / -1; }
+  .bz-col-hdr { font-size:10px; font-weight:600; color:var(--text3); text-transform:uppercase; letter-spacing:0.06em; padding:3px 10px 5px; }
+
   @media (max-width: 600px) {
     .grid-2, .grid-3, .vehicle-grid { grid-template-columns: 1fr; }
     .vehicle-grid .vspan-2 { grid-column: span 1; }
   }
+
+  /* ── Collapsible sections ── */
+  .section.collapsed .section-body { display: none; }
+  .section-head { cursor: pointer; user-select: none; -webkit-user-select: none; }
+  .section-head-inner { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+  .section-chevron { font-size: 11px; color: var(--text3); transition: transform 0.18s; line-height: 1; flex-shrink: 0; }
+  .section.collapsed .section-chevron { transform: rotate(-90deg); }
+
+  /* ── Section fill dot ── */
+  .sec-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border2); flex-shrink: 0; transition: background 0.35s; margin-right: 2px; }
+  .sec-dot.filled { background: var(--success); }
+
+  /* ── Floating action bar ── */
+  .float-bar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.96); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid var(--border); padding: 9px 1.5rem; display: flex; align-items: center; justify-content: flex-end; gap: 10px; z-index: 200; box-shadow: 0 -4px 16px rgba(0,0,0,0.06); }
+  .float-bar .float-status { font-size: 12px; color: var(--text3); font-family: 'DM Mono', monospace; margin-right: auto; }
+  .float-bar .float-status.saved { color: var(--success); }
+  .page { padding-bottom: 5rem; }
+
+  /* ── DOB age badge ── */
+  .age-badge { display: inline-block; font-size: 11px; color: var(--accent); font-family: 'DM Mono', monospace; padding: 2px 7px; background: var(--accent-bg); border-radius: 4px; margin-top: 3px; }
 </style>
 </head>
 <body>
@@ -143,10 +166,10 @@
   </div>
 
   <div class="firm-bar">
-    <label>Source / Fuente <span style="color:var(--danger);margin-left:2px;">*</span></label>
-    <div id="f-source" style="flex:1;">
-      <input type="text" id="source" placeholder="e.g. AV / Zen" style="min-width:220px;">
-      <span class="err-msg" style="font-size:11px;color:var(--danger);display:none;">Required / Requerido</span>
+    <label>Source / Fuente <span style="color:var(--danger);font-size:11px;">*</span></label>
+    <div id="f-source" style="flex:1;display:flex;align-items:center;gap:8px;">
+      <input type="text" id="source" placeholder="e.g. AV / Zen" style="flex:1;">
+      <span class="err-msg" style="display:none;font-size:11px;color:var(--danger);">Required</span>
     </div>
   </div>
 
@@ -163,9 +186,79 @@
     </div>
   </div>
 
+  <!-- CLIENT INFO -->
+  <div class="section" id="sec-client">
+    <div class="section-head" onclick="toggleSection(this)">
+      <div class="section-head-inner"><span class="section-head-title">Client Info / Información del Cliente</span><div style="display:flex;align-items:center;gap:7px;"><span class="sec-dot" id="sec-dot-client"></span><span class="section-chevron">▾</span></div></div>
+    </div>
+    <div class="section-body">
+      <div class="grid-2">
+        <div class="field" id="f-name">
+          <label>Full name <span class="es">/ Nombre completo</span> <span class="required">*</span></label>
+          <input type="text" id="name" placeholder="First Last">
+          <span class="err-msg">Required / Requerido</span>
+        </div>
+        <div class="field">
+          <label>Date of birth <span class="es">/ Fecha de nacimiento</span></label>
+          <input type="date" id="dob" onchange="updateAge()">
+          <span class="age-badge" id="dob-age" style="display:none;"></span>
+        </div>
+        <div class="field" id="f-tel">
+          <label>Phone <span class="es">/ Teléfono</span> <span class="required">*</span></label>
+          <input type="tel" id="tel" placeholder="+1 (305) 000-0000">
+          <span class="err-msg">Required / Requerido</span>
+        </div>
+        <div class="field">
+          <label>Email <span class="es">/ Correo electrónico</span></label>
+          <input type="email" id="email" placeholder="example@email.com">
+        </div>
+      </div>
+      <div class="field gap-top">
+        <label>Address <span class="es">/ Dirección</span></label>
+        <div class="address-wrap">
+          <input type="text" id="address" placeholder="Start typing address / Empieza a escribir..." autocomplete="off">
+          <div class="address-suggestions" id="addr-suggest"></div>
+        </div>
+      </div>
+      <div class="grid-3 gap-top">
+        <div class="field"><label>City <span class="es">/ Ciudad</span></label><input type="text" id="city" placeholder="Miami"></div>
+        <div class="field"><label>State <span class="es">/ Estado</span></label><input type="text" id="state" placeholder="FL" maxlength="2"></div>
+        <div class="field"><label>ZIP Code</label><input type="text" id="zip" placeholder="33101" maxlength="5" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')"></div>
+      </div>
+      <div class="grid-3 gap-top">
+        <div class="field">
+          <label>Marital status <span class="es">/ Estado civil</span></label>
+          <select id="marital">
+            <option value="">— Select —</option>
+            <option>Single / Soltero(a)</option>
+            <option>Married / Casado(a)</option>
+            <option>Divorced / Divorciado(a)</option>
+            <option>Widowed / Viudo(a)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>SSN last 4 <span class="es">/ Últimos 4 del SS</span></label>
+          <div class="toggle-group" id="ssn-tg" style="margin-bottom:6px;">
+            <div class="tog" onclick="ssnToggle(this,'ssn-tg')">N/A</div>
+            <div class="tog" onclick="ssnToggle(this,'ssn-tg')">Tourist / Turista</div>
+          </div>
+          <input type="text" id="ssn" maxlength="4" placeholder="XXXX" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')">
+        </div>
+        <div class="field">
+          <label>Emergency contact <span class="es">/ Contacto de emergencia</span></label>
+          <input type="text" id="emergency" placeholder="Name — Phone">
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
   <!-- CASE INFO -->
-  <div class="section">
-    <div class="section-head"><span class="section-head-title">Case Info / Información del Caso</span></div>
+  <div class="section" id="sec-case">
+    <div class="section-head" onclick="toggleSection(this)">
+      <div class="section-head-inner"><span class="section-head-title">Case Info / Información del Caso</span><div style="display:flex;align-items:center;gap:7px;"><span class="sec-dot" id="sec-dot-case"></span><span class="section-chevron">▾</span></div></div>
+    </div>
     <div class="section-body">
       <div class="grid-3">
         <div class="field" id="f-dol">
@@ -207,179 +300,70 @@
           </select>
         </div>
       </div>
-      <div class="grid-3 gap-top">
-        <div class="field"><label>City <span class="es">/ Ciudad</span></label><input type="text" id="city" placeholder="Miami"></div>
-        <div class="field"><label>State <span class="es">/ Estado</span></label><input type="text" id="state" placeholder="FL" maxlength="2"></div>
-        <div class="field"><label>ZIP Code</label><input type="text" id="zip" placeholder="33101" maxlength="5" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')"></div>
-      </div>
-    </div>
-  </div>
-
-
-
-
-
-  <!-- CLIENT INFO -->
-  <div class="section">
-    <div class="section-head"><span class="section-head-title">Client Info / Información del Cliente</span></div>
-    <div class="section-body">
-      <div class="grid-2">
-        <div class="field" id="f-name">
-          <label>Full name <span class="es">/ Nombre completo</span> <span class="required">*</span></label>
-          <input type="text" id="name" placeholder="First Last">
-          <span class="err-msg">Required / Requerido</span>
+      <div class="grid-2 gap-top">
+        <div class="field">
+          <label>Police report <span class="es">/ Reporte policial</span></label>
+          <div class="toggle-group" id="police-tg" style="margin-bottom:6px;">
+            <div class="tog" onclick="tog(this,'police-tg')">Yes / Sí</div>
+            <div class="tog" onclick="tog(this,'police-tg')">No</div>
+            <div class="tog" onclick="tog(this,'police-tg')">Pending / Pendiente</div>
+          </div>
+          <input type="text" id="police_report_num" placeholder="Report # / Número de reporte">
         </div>
         <div class="field">
-          <label>Date of birth <span class="es">/ Fecha de nacimiento</span></label>
-          <input type="date" id="dob">
-        </div>
-        <div class="field" id="f-tel">
-          <label>Phone <span class="es">/ Teléfono</span> <span class="required">*</span></label>
-          <input type="tel" id="tel" placeholder="+1 (305) 000-0000">
-          <span class="err-msg">Required / Requerido</span>
-        </div>
-        <div class="field">
-          <label>Email <span class="es">/ Correo electrónico</span></label>
-          <input type="email" id="email" placeholder="example@email.com">
+          <label>Rideshare <span class="es">/ Transporte por app</span></label>
+          <div class="toggle-group" id="rideshare-tg">
+            <div class="tog" onclick="tog(this,'rideshare-tg')">Uber</div>
+            <div class="tog" onclick="tog(this,'rideshare-tg')">Lyft</div>
+            <div class="tog" onclick="tog(this,'rideshare-tg')">DoorDash</div>
+            <div class="tog" onclick="tog(this,'rideshare-tg')">Instacart</div>
+            <div class="tog" onclick="tog(this,'rideshare-tg')">Amazon Flex</div>
+            <div class="tog" onclick="tog(this,'rideshare-tg')">Walmart Spark</div>
+            <div class="tog" onclick="tog(this,'rideshare-tg')">Spark Drive</div>
+            <div class="tog" onclick="tog(this,'rideshare-tg')">Shipt</div>
+            <div class="tog" onclick="tog(this,'rideshare-tg')">Grubhub</div>
+            <div class="tog" onclick="tog(this,'rideshare-tg')">Other / Otro</div>
+            <div class="tog" onclick="tog(this,'rideshare-tg')">None / Ninguno</div>
+          </div>
         </div>
       </div>
       <div class="field gap-top">
-        <label>Address <span class="es">/ Dirección</span></label>
-        <div class="address-wrap">
-          <input type="text" id="address" placeholder="Start typing address / Empieza a escribir..." autocomplete="off">
-          <div class="address-suggestions" id="addr-suggest"></div>
-        </div>
-      </div>
-            <div class="vehicle-list" id="vehicle-list"></div>
-      <button class="add-vehicle-btn" onclick="addVehicle()">+ Add vehicle / Agregar vehículo</button>
-
-      <div class="grid-3 gap-top">
-        <div class="field">
-          <label>Marital status <span class="es">/ Estado civil</span></label>
-          <select id="marital">
-            <option value="">— Select —</option>
-            <option>Single / Soltero(a)</option>
-            <option>Married / Casado(a)</option>
-            <option>Divorced / Divorciado(a)</option>
-            <option>Widowed / Viudo(a)</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>SSN last 4 <span class="es">/ Últimos 4 del SS</span></label>
-          <div class="toggle-group" id="ssn-tg" style="margin-bottom:6px;">
-            <div class="tog" onclick="ssnToggle(this,'ssn-tg')">N/A</div>
-            <div class="tog" onclick="ssnToggle(this,'ssn-tg')">Tourist / Turista</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
+          <label>Description <span class="es">— type in Spanish / escribe en español</span></label>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:12px;color:var(--text3);">Auto-translate to English ↓</span>
+            <label class="switch"><input type="checkbox" id="translate-sw" onchange="toggleTranslate(this)"><span class="sw-track"></span></label>
           </div>
-          <input type="text" id="ssn" maxlength="4" placeholder="XXXX" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')">
         </div>
-        <div class="field">
-          <label>Emergency contact <span class="es">/ Contacto de emergencia</span></label>
-          <input type="text" id="emergency" placeholder="Name — Phone">
+        <textarea id="description" placeholder="Describe el accidente aquí... (se traducirá al inglés automáticamente)"></textarea>
+        <div id="translation-box" style="display:none;margin-top:8px;">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">English translation (auto) / Traducción al inglés</div>
+          <textarea id="description_translated" placeholder="English translation will appear here..." style="min-height:64px;background:var(--surface2);color:var(--text2);"></textarea>
         </div>
-
       </div>
     </div>
   </div>
-
-
 
 
 
   <!-- COMPANION -->
-  <div class="section">
-    <div class="section-head"><span class="section-head-title">Companion / Acompañante</span></div>
+  <div class="section" id="sec-companion">
+    <div class="section-head" onclick="toggleSection(this)">
+      <div class="section-head-inner"><span class="section-head-title">Companions / Acompañantes</span><div style="display:flex;align-items:center;gap:7px;"><span class="sec-dot" id="sec-dot-companion"></span><span class="section-chevron">▾</span></div></div>
+    </div>
     <div class="section-body">
-      <div class="switch-row">
-        <label>Include companion <span style="color:var(--text3);font-weight:400;">/ Incluir acompañante</span></label>
-        <label class="switch">
-          <input type="checkbox" id="comp-switch" onchange="toggleCompanion(this)">
-          <span class="sw-track"></span>
-        </label>
-        <span class="note" id="comp-note">No companion / Sin acompañante</span>
+      <div class="vehicle-list" id="companion-list">
+        <div style="font-size:13px;color:var(--text3);padding:4px 0;">No companions added / Sin acompañantes agregados</div>
       </div>
-      <div id="companion-body" style="display:none; margin-top:16px;">
-        <div class="grid-2">
-          <div class="field"><label>Full name <span class="es">/ Nombre completo</span></label><input type="text" id="c_name" placeholder="First Last"></div>
-          <div class="field"><label>Date of birth <span class="es">/ Fecha de nacimiento</span></label><input type="date" id="c_dob"></div>
-          <div class="field"><label>Phone <span class="es">/ Teléfono</span></label><input type="tel" id="c_tel" placeholder="+1 (305) 000-0000"></div>
-          <div class="field"><label>Email <span class="es">/ Correo electrónico</span></label><input type="email" id="c_email" placeholder="example@email.com"></div>
-        </div>
-        <div class="field gap-top">
-          <label>Address <span class="es">/ Dirección</span></label>
-          <div class="address-wrap">
-            <input type="text" id="c_address" placeholder="Start typing address..." autocomplete="off">
-            <div class="address-suggestions" id="c_addr-suggest"></div>
-          </div>
-        </div>
-        <div class="grid-3 gap-top">
-          <div class="field"><label>City <span class="es">/ Ciudad</span></label><input type="text" id="c_city" placeholder="Miami"></div>
-          <div class="field"><label>State <span class="es">/ Estado</span></label><input type="text" id="c_state" placeholder="FL" maxlength="2"></div>
-          <div class="field"><label>ZIP Code</label><input type="text" id="c_zip" placeholder="33101" maxlength="5" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')"></div>
-        </div>
-        <div class="grid-3 gap-top">
-          <div class="field">
-            <label>Marital status <span class="es">/ Estado civil</span></label>
-            <select id="c_marital">
-              <option value="">— Select —</option>
-              <option>Single / Soltero(a)</option>
-              <option>Married / Casado(a)</option>
-              <option>Divorced / Divorciado(a)</option>
-              <option>Widowed / Viudo(a)</option>
-            </select>
-          </div>
-          <div class="field"><label>SSN last 4 <span class="es">/ Últimos 4 SS</span></label><input type="text" id="c_ssn" maxlength="4" placeholder="XXXX" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')"></div>
-          <div class="field"><label>Emergency contact</label><input type="text" id="c_emergency" placeholder="Name — Phone"></div>
-        </div>
-        <div class="grid-3 gap-top">
-          <div class="field"><label>Hospital</label><input type="text" id="c_hospital" placeholder="Hospital name"></div>
-          <div class="field">
-            <label>Rescue <span class="es">/ Rescate</span></label>
-            <div class="toggle-group" id="c_rescue-tg">
-              <div class="tog" onclick="tog(this,'c_rescue-tg')">Yes / Sí</div>
-              <div class="tog" onclick="tog(this,'c_rescue-tg')">No</div>
-            </div>
-          </div>
-          <div class="field"><label>Health insurance <span class="es">/ Seguro médico</span></label><input type="text" id="c_health_ins" placeholder="Provider name"></div>
-        </div>
-        <div class="field gap-top">
-          <label>Injuries <span class="es">/ Lesiones</span></label>
-          <div class="body-zones" id="c_body-zones">
-            <label class="body-zone"><input type="checkbox" value="Head / Cabeza"><span>Head / Cabeza</span></label>
-            <label class="body-zone"><input type="checkbox" value="Face / Cara"><span>Face / Cara</span></label>
-            <label class="body-zone"><input type="checkbox" value="Neck / Cuello"><span>Neck / Cuello</span></label>
-            <label class="body-zone"><input type="checkbox" value="Left shoulder / Hombro izq."><span>Left shoulder / Hombro izq.</span></label>
-            <label class="body-zone"><input type="checkbox" value="Right shoulder / Hombro der."><span>Right shoulder / Hombro der.</span></label>
-            <label class="body-zone"><input type="checkbox" value="Upper back / Espalda alta"><span>Upper back / Espalda alta</span></label>
-            <label class="body-zone"><input type="checkbox" value="Lower back / Espalda baja"><span>Lower back / Espalda baja</span></label>
-            <label class="body-zone"><input type="checkbox" value="Chest / Pecho"><span>Chest / Pecho</span></label>
-            <label class="body-zone"><input type="checkbox" value="Left arm / Brazo izq."><span>Left arm / Brazo izq.</span></label>
-            <label class="body-zone"><input type="checkbox" value="Right arm / Brazo der."><span>Right arm / Brazo der.</span></label>
-            <label class="body-zone"><input type="checkbox" value="Left knee / Rodilla izq."><span>Left knee / Rodilla izq.</span></label>
-            <label class="body-zone"><input type="checkbox" value="Right knee / Rodilla der."><span>Right knee / Rodilla der.</span></label>
-            <label class="body-zone"><input type="checkbox" value="Left leg / Pierna izq."><span>Left leg / Pierna izq.</span></label>
-            <label class="body-zone"><input type="checkbox" value="Right leg / Pierna der."><span>Right leg / Pierna der.</span></label>
-          </div>
-          <textarea id="c_injury_notes" placeholder="Additional notes..." style="min-height:48px; margin-top:8px;"></textarea>
-        </div>
-        <div class="grid-2 gap-top">
-          <div class="field"><label>Employer <span class="es">/ Empleador</span></label><input type="text" id="c_job" placeholder="Company name"></div>
-          <div class="field"><label>Hourly wage <span class="es">/ Salario por hora</span></label><input type="text" id="c_wage" placeholder="$0.00"></div>
-        </div>
-        <div class="field gap-top">
-          <label>Prior accidents or claims <span class="es">/ Reclamos previos</span></label>
-          <textarea id="c_priors" placeholder="Details..." style="min-height:48px;"></textarea>
-        </div>
-      </div>
+      <button class="add-vehicle-btn" onclick="addCompanion()" style="margin-top:8px;">+ Add companion / Agregar acompañante</button>
     </div>
   </div>
 
-  
-
-
-
   <!-- MEDICAL & EMPLOYMENT -->
-  <div class="section">
-    <div class="section-head"><span class="section-head-title">Medical & Employment / Médico y Empleo</span></div>
+  <div class="section" id="sec-medical">
+    <div class="section-head" onclick="toggleSection(this)">
+      <div class="section-head-inner"><span class="section-head-title">Medical &amp; Employment / Médico y Empleo</span><div style="display:flex;align-items:center;gap:7px;"><span class="sec-dot" id="sec-dot-medical"></span><span class="section-chevron">▾</span></div></div>
+    </div>
     <div class="section-body">
       <div class="grid-3">
         <div class="field">
@@ -404,22 +388,24 @@
       <div class="field gap-top">
         <label>Injuries — select affected body areas <span class="es">/ Lesiones — áreas afectadas</span></label>
         <div class="body-zones" id="body-zones">
-          <label class="body-zone"><input type="checkbox" value="Head / Cabeza"><span>Head / Cabeza</span></label>
-          <label class="body-zone"><input type="checkbox" value="Face / Cara"><span>Face / Cara</span></label>
-          <label class="body-zone"><input type="checkbox" value="Neck / Cuello"><span>Neck / Cuello</span></label>
+          <div class="bz-col-hdr">← Left / Izq.</div>
+          <div class="bz-col-hdr" style="justify-content:flex-end;">Right / Der. →</div>
+          <label class="body-zone bz-full"><input type="checkbox" value="Head / Cabeza"><span>Head / Cabeza</span></label>
+          <label class="body-zone bz-full"><input type="checkbox" value="Face / Cara"><span>Face / Cara</span></label>
+          <label class="body-zone bz-full"><input type="checkbox" value="Neck / Cuello"><span>Neck / Cuello</span></label>
           <label class="body-zone"><input type="checkbox" value="Left shoulder / Hombro izq."><span>Left shoulder / Hombro izq.</span></label>
           <label class="body-zone"><input type="checkbox" value="Right shoulder / Hombro der."><span>Right shoulder / Hombro der.</span></label>
-          <label class="body-zone"><input type="checkbox" value="Upper back / Espalda alta"><span>Upper back / Espalda alta</span></label>
-          <label class="body-zone"><input type="checkbox" value="Lower back / Espalda baja"><span>Lower back / Espalda baja</span></label>
-          <label class="body-zone"><input type="checkbox" value="Chest / Pecho"><span>Chest / Pecho</span></label>
+          <label class="body-zone bz-full"><input type="checkbox" value="Upper back / Espalda alta"><span>Upper back / Espalda alta</span></label>
+          <label class="body-zone bz-full"><input type="checkbox" value="Lower back / Espalda baja"><span>Lower back / Espalda baja</span></label>
+          <label class="body-zone bz-full"><input type="checkbox" value="Chest / Pecho"><span>Chest / Pecho</span></label>
+          <label class="body-zone bz-full"><input type="checkbox" value="Abdomen"><span>Abdomen</span></label>
           <label class="body-zone"><input type="checkbox" value="Left arm / Brazo izq."><span>Left arm / Brazo izq.</span></label>
           <label class="body-zone"><input type="checkbox" value="Right arm / Brazo der."><span>Right arm / Brazo der.</span></label>
           <label class="body-zone"><input type="checkbox" value="Left wrist / Muñeca izq."><span>Left wrist / Muñeca izq.</span></label>
           <label class="body-zone"><input type="checkbox" value="Right wrist / Muñeca der."><span>Right wrist / Muñeca der.</span></label>
           <label class="body-zone"><input type="checkbox" value="Left hand / Mano izq."><span>Left hand / Mano izq.</span></label>
           <label class="body-zone"><input type="checkbox" value="Right hand / Mano der."><span>Right hand / Mano der.</span></label>
-          <label class="body-zone"><input type="checkbox" value="Abdomen"><span>Abdomen</span></label>
-          <label class="body-zone"><input type="checkbox" value="Hip / Cadera"><span>Hip / Cadera</span></label>
+          <label class="body-zone bz-full"><input type="checkbox" value="Hip / Cadera"><span>Hip / Cadera</span></label>
           <label class="body-zone"><input type="checkbox" value="Left knee / Rodilla izq."><span>Left knee / Rodilla izq.</span></label>
           <label class="body-zone"><input type="checkbox" value="Right knee / Rodilla der."><span>Right knee / Rodilla der.</span></label>
           <label class="body-zone"><input type="checkbox" value="Left leg / Pierna izq."><span>Left leg / Pierna izq.</span></label>
@@ -445,65 +431,24 @@
 
 
 
-
-
   <!-- VEHICLES -->
-  <div class="section">
-    <div class="section-head"><span class="section-head-title">Vehicles / Vehículos</span></div>
+  <div class="section" id="sec-vehicles">
+    <div class="section-head" onclick="toggleSection(this)">
+      <div class="section-head-inner"><span class="section-head-title">Vehicles / Vehículos</span><div style="display:flex;align-items:center;gap:7px;"><span class="sec-dot" id="sec-dot-vehicles"></span><span class="section-chevron">▾</span></div></div>
+    </div>
     <div class="section-body">
-            <div class="grid-2 gap-top">
-        <div class="field">
-          <label>Police report <span class="es">/ Reporte policial</span></label>
-          <div class="toggle-group" id="police-tg" style="margin-bottom:6px;">
-            <div class="tog" onclick="tog(this,'police-tg')">Yes / Sí</div>
-            <div class="tog" onclick="tog(this,'police-tg')">No</div>
-            <div class="tog" onclick="tog(this,'police-tg')">Pending / Pendiente</div>
-          </div>
-          <input type="text" id="police_report_num" placeholder="Report # / Número de reporte">
-        </div>
-        <div class="field">
-          <label>Rideshare <span class="es">/ Transporte por app</span></label>
-          <div class="toggle-group" id="rideshare-tg">
-            <div class="tog" onclick="tog(this,'rideshare-tg')">Uber</div>
-            <div class="tog" onclick="tog(this,'rideshare-tg')">Lyft</div>
-            <div class="tog" onclick="tog(this,'rideshare-tg')">DoorDash</div>
-            <div class="tog" onclick="tog(this,'rideshare-tg')">Instacart</div>
-            <div class="tog" onclick="tog(this,'rideshare-tg')">Amazon Flex</div>
-            <div class="tog" onclick="tog(this,'rideshare-tg')">Walmart Spark</div>
-            <div class="tog" onclick="tog(this,'rideshare-tg')">Spark Drive</div>
-            <div class="tog" onclick="tog(this,'rideshare-tg')">Shipt</div>
-            <div class="tog" onclick="tog(this,'rideshare-tg')">Grubhub</div>
-            <div class="tog" onclick="tog(this,'rideshare-tg')">None / Ninguno</div>
-          </div>
-        </div>
-      </div>
-      <div style="margin-top:12px;"></div>
-
-      <div class="field gap-top">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
-          <label>Description <span class="es">— type in Spanish / escribe en español</span></label>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <span style="font-size:12px;color:var(--text3);">Auto-translate to English ↓</span>
-            <label class="switch"><input type="checkbox" id="translate-sw" onchange="toggleTranslate(this)"><span class="sw-track"></span></label>
-          </div>
-        </div>
-        <textarea id="description" placeholder="Describe el accidente aquí... (se traducirá al inglés automáticamente)"></textarea>
-        <div id="translation-box" style="display:none;margin-top:8px;">
-          <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">English translation (auto) / Traducción al inglés</div>
-          <textarea id="description_translated" placeholder="English translation will appear here..." style="min-height:64px;background:var(--surface2);color:var(--text2);"></textarea>
-        </div>
-
-      </div>
+      <div class="vehicle-list" id="vehicle-list"></div>
+      <button class="add-vehicle-btn" onclick="addVehicle()">+ Add vehicle / Agregar vehículo</button>
     </div>
   </div>
 
 
 
-
-
   <!-- NOTES & CLIENT RATING -->
-  <div class="section">
-    <div class="section-head"><span class="section-head-title">Notes & Rating / Notas y Evaluación</span></div>
+  <div class="section" id="sec-notes">
+    <div class="section-head" onclick="toggleSection(this)">
+      <div class="section-head-inner"><span class="section-head-title">Notes &amp; Rating / Notas y Evaluación</span><div style="display:flex;align-items:center;gap:7px;"><span class="sec-dot" id="sec-dot-notes"></span><span class="section-chevron">▾</span></div></div>
+    </div>
     <div class="section-body">
       <div class="grid-2">
         <div class="field">
@@ -567,6 +512,13 @@
   </div>
 
 </div>
+
+<!-- Floating action bar -->
+<div class="float-bar">
+  <span class="float-status" id="float-draft-status"></span>
+  <button class="btn" onclick="saveDraft()" title="Save draft (Cmd+S / Ctrl+S)" style="padding:7px 16px;font-size:13px;">💾 Save draft</button>
+  <button class="btn btn-primary" onclick="generatePDF()" style="padding:7px 16px;font-size:13px;">⬇ Export PDF</button>
+</div>
 <script>
 // Date display
 document.getElementById('hdate').textContent = new Date().toLocaleDateString('en-US',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
@@ -584,10 +536,6 @@ function tog(el, groupId) {
   el.classList.add('active');
 }
 
-function toggleCompanion(sw) {
-  document.getElementById('companion-body').style.display = sw.checked ? 'block' : 'none';
-  document.getElementById('comp-note').textContent = sw.checked ? 'Companion included / Acompañante incluido' : 'No companion / Sin acompañante';
-}
 
 // Vehicle management — uses an array to track active vehicles so IDs stay accurate
 let vehicles = [];
@@ -632,8 +580,8 @@ function renderVehicles() {
         <div class="field"><label>Plate / Placa</label><input type="text" id="v${id}_plate" placeholder="ABC-1234"></div>
         <div class="field"><label>Color</label><input type="text" id="v${id}_color" placeholder="e.g. Red / Rojo"></div>
         <div class="field vspan-2"><label>Owner / Dueño del vehículo</label><input type="text" id="v${id}_owner" placeholder="Name — Phone"></div>
-        <div class="field vspan-2"><label>This vehicle belongs to / <span class="es">Este vehículo es de</span></label><input type="text" id="v${id}_belongs" placeholder="e.g. Our client / Other party / Third party..."></div>
         <div class="field vspan-2"><label>Claim # <span class="es">/ Número de reclamo</span></label><input type="text" id="v${id}_claim" placeholder="Claim number..."></div>
+        <div class="field vspan-2"><label>This vehicle belongs to <span class="es">/ Este vehículo es de</span></label><input type="text" id="v${id}_belongs" placeholder="e.g. Our client, Other party..."></div>
       </div>
       <div style="margin-top:10px;display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;">
         <div class="field" style="min-width:160px;">
@@ -652,7 +600,10 @@ function renderVehicles() {
         </div>
         <div class="field" style="flex:1;min-width:180px;">
           <label>Car location / Ubicación del vehículo</label>
-          <input type="text" id="v${id}_location" placeholder="Tow yard, address...">
+          <div class="address-wrap">
+            <input type="text" id="v${id}_location" placeholder="Tow yard, address..." autocomplete="off">
+            <div class="address-suggestions" id="v${id}_loc-suggest"></div>
+          </div>
         </div>
       </div>
     </div>`;
@@ -663,12 +614,15 @@ function renderVehicles() {
     const el = document.getElementById(key);
     if (el && saved[key]) el.value = saved[key];
   });
+  // Setup location autocomplete for each vehicle
+  vehicles.forEach(id => { setupAddressSimple('v'+id+'_location','v'+id+'_loc-suggest'); });
 }
 
 addVehicle(); addVehicle();
 
 // Address autocomplete — safe version using JS object cache
 const addrCache = {};
+const STATE_MAP = {'Alabama':'AL','Alaska':'AK','Arizona':'AZ','Arkansas':'AR','California':'CA','Colorado':'CO','Connecticut':'CT','Delaware':'DE','Florida':'FL','Georgia':'GA','Hawaii':'HI','Idaho':'ID','Illinois':'IL','Indiana':'IN','Iowa':'IA','Kansas':'KS','Kentucky':'KY','Louisiana':'LA','Maine':'ME','Maryland':'MD','Massachusetts':'MA','Michigan':'MI','Minnesota':'MN','Mississippi':'MS','Missouri':'MO','Montana':'MT','Nebraska':'NE','Nevada':'NV','New Hampshire':'NH','New Jersey':'NJ','New Mexico':'NM','New York':'NY','North Carolina':'NC','North Dakota':'ND','Ohio':'OH','Oklahoma':'OK','Oregon':'OR','Pennsylvania':'PA','Rhode Island':'RI','South Carolina':'SC','South Dakota':'SD','Tennessee':'TN','Texas':'TX','Utah':'UT','Vermont':'VT','Virginia':'VA','Washington':'WA','West Virginia':'WV','Wisconsin':'WI','Wyoming':'WY','District of Columbia':'DC'};
 
 function setupAddress(inputId, suggestId, cityId, stateId, zipId) {
   const input = document.getElementById(inputId);
@@ -682,7 +636,7 @@ function setupAddress(inputId, suggestId, cityId, stateId, zipId) {
     box.innerHTML = '<div class="addr-loading">Searching... / Buscando...</div>';
     box.classList.add('show');
     timer = setTimeout(() => {
-      const url = 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&countrycodes=us&limit=7&q=' + encodeURIComponent(val);
+      const url = 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&countrycodes=us&limit=8&featuretype=&q=' + encodeURIComponent(val);
       fetch(url)
         .then(r => r.json())
         .then(data => {
@@ -712,7 +666,10 @@ function setupAddress(inputId, suggestId, cityId, stateId, zipId) {
               if (!r) return;
               document.getElementById(inputId).value = r.street;
               if (cityId) document.getElementById(cityId).value = r.city;
-              if (stateId) document.getElementById(stateId).value = r.state ? r.state.substring(0,2).toUpperCase() : '';
+              if (stateId) {
+                const stRaw = (r.state || '').trim();
+                document.getElementById(stateId).value = STATE_MAP[stRaw] || (stRaw.length <= 2 ? stRaw.toUpperCase() : stRaw) || '';
+              }
               if (zipId) document.getElementById(zipId).value = r.zip;
               box.classList.remove('show');
             });
@@ -726,7 +683,6 @@ function setupAddress(inputId, suggestId, cityId, stateId, zipId) {
 }
 
 setupAddress('address','addr-suggest','city','state','zip');
-setupAddress('c_address','c_addr-suggest','c_city','c_state','c_zip');
 
 // Helpers
 function v(id) { const el = document.getElementById(id); return el ? (el.value||'').trim() : ''; }
@@ -821,144 +777,14 @@ function clearForm() {
   document.querySelectorAll('input[type=checkbox]').forEach(cb => { cb.checked = false; cb.closest('.body-zone')?.classList.remove('selected'); });
   document.querySelectorAll('.tog').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.field-error').forEach(f => f.classList.remove('field-error'));
-  document.getElementById('companion-body').style.display = 'none';
   const ssnEl = document.getElementById('ssn'); if(ssnEl){ssnEl.disabled=false;ssnEl.style.opacity='1';}
   const translateSw = document.getElementById('translate-sw'); if(translateSw) translateSw.checked=false;
   const transBox = document.getElementById('translation-box'); if(transBox) transBox.style.display='none';
-  document.getElementById('comp-switch').checked = false;
-  document.getElementById('comp-note').textContent = 'No companion / Sin acompañante';
   vehicles = []; vCounter = 0;
   addVehicle(); addVehicle();
+  companions = []; cCounter = 0;
+  renderCompanions();
 }
-
-// ============================================================
-// DRAFT SAVE / RESTORE SYSTEM
-// ============================================================
-const DRAFT_KEY = 'intake_drafts';
-let currentDraftId = null;
-
-function getDrafts() {
-  try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || '{}'); } catch(e) { return {}; }
-}
-function setDrafts(d) { localStorage.setItem(DRAFT_KEY, JSON.stringify(d)); }
-
-function collectFormData() {
-  const data = { vehicles: [], companion: false, toggles: {}, checkboxes: {}, fields: {} };
-  document.querySelectorAll('input:not([type=checkbox]):not([type=file]), textarea, select').forEach(el => {
-    if (el.id) data.fields[el.id] = el.value;
-  });
-  document.querySelectorAll('[id$="-tg"]').forEach(grp => {
-    const active = grp.querySelector('.tog.active');
-    data.toggles[grp.id] = active ? active.textContent.trim() : '';
-  });
-  document.querySelectorAll('input[type=checkbox]').forEach(cb => {
-    if (cb.value) data.checkboxes[cb.value + '_' + (cb.closest('#c_body-zones') ? 'c' : 'm')] = cb.checked;
-  });
-  data.companion = document.getElementById('comp-switch').checked;
-  data.vehicles = vehicles.slice();
-  data.vCounter = vCounter;
-  vehicles.forEach(id => {
-    ['year','make','model','ins','plate','color','owner','location','claim','belongs'].forEach(f => {
-      const el = document.getElementById('v'+id+'_'+f);
-      if (el) data.fields['v'+id+'_'+f] = el.value;
-    });
-  });
-  return data;
-}
-
-function applyFormData(data) {
-  if (!data) return;
-  vehicles = data.vehicles || [];
-  vCounter = data.vCounter || 0;
-  renderVehicles();
-  Object.keys(data.fields || {}).forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = data.fields[id];
-  });
-  Object.keys(data.toggles || {}).forEach(groupId => {
-    const val = data.toggles[groupId];
-    if (!val) return;
-    document.querySelectorAll('#'+groupId+' .tog').forEach(t => {
-      t.classList.toggle('active', t.textContent.trim() === val);
-    });
-  });
-  document.querySelectorAll('input[type=checkbox]').forEach(cb => {
-    if (!cb.value) return;
-    const key = cb.value + '_' + (cb.closest('#c_body-zones') ? 'c' : 'm');
-    if (key in (data.checkboxes || {})) {
-      cb.checked = data.checkboxes[key];
-      cb.closest('.body-zone')?.classList.toggle('selected', cb.checked);
-    }
-  });
-  const compSw = document.getElementById('comp-switch');
-  compSw.checked = !!data.companion;
-  toggleCompanion(compSw);
-}
-
-function saveDraft() {
-  const drafts = getDrafts();
-  const id = currentDraftId || ('draft_' + Date.now());
-  const clientName = document.getElementById('name')?.value?.trim() || '';
-  const dol = document.getElementById('dol')?.value || '';
-  const label = clientName ? clientName + (dol ? ' · ' + dol : '') : (dol || new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'}));
-  drafts[id] = { id, label, ts: Date.now(), data: collectFormData() };
-  setDrafts(drafts);
-  currentDraftId = id;
-  renderDraftList();
-  showDraftStatus('Saved: ' + label);
-}
-
-function loadDraft(id) {
-  const drafts = getDrafts();
-  if (!drafts[id]) return;
-  currentDraftId = id;
-  applyFormData(drafts[id].data);
-  renderDraftList();
-  showDraftStatus('Loaded: ' + drafts[id].label);
-}
-
-function deleteDraft(id, e) {
-  e.stopPropagation();
-  const drafts = getDrafts();
-  delete drafts[id];
-  setDrafts(drafts);
-  if (currentDraftId === id) { currentDraftId = null; showDraftStatus('Draft deleted'); }
-  renderDraftList();
-}
-
-function newDraft() {
-  currentDraftId = null;
-  clearForm();
-  showDraftStatus('New intake started');
-}
-
-function showDraftStatus(msg) {
-  const el = document.getElementById('draft-status');
-  el.textContent = msg;
-  el.classList.add('saved');
-  setTimeout(() => { el.classList.remove('saved'); el.textContent = currentDraftId ? 'Draft active' : 'No draft saved'; }, 3000);
-}
-
-function renderDraftList() {
-  const drafts = getDrafts();
-  const list = document.getElementById('draft-list');
-  const keys = Object.keys(drafts).sort((a,b) => drafts[b].ts - drafts[a].ts);
-  if (!keys.length) {
-    list.innerHTML = '<span style="font-size:12px;color:var(--text3);">No drafts yet / Sin borradores</span>';
-    return;
-  }
-  list.innerHTML = keys.map(id => {
-    const d = drafts[id];
-    const isActive = id === currentDraftId;
-    return `<span class="draft-slot${isActive?' active':''}" onclick="loadDraft('${id}')" title="Click to load">
-      ${d.label}
-      <span onclick="deleteDraft('${id}',event)" style="margin-left:6px;opacity:0.5;font-size:11px;" title="Delete">✕</span>
-    </span>`;
-  }).join('');
-}
-
-// Auto-save every 30 seconds if there's an active draft
-setInterval(() => { if (currentDraftId) saveDraft(); }, 30000);
 
 function generatePDF() {
   if (!validateForm()) return;
@@ -1056,12 +882,9 @@ function generatePDF() {
       const vstr = [vd.year, vd.make, vd.model, vd.color].filter(Boolean).join(' · ');
       const lbl = vd.num === 1 ? 'V1 — Client / Cliente' : vd.num === 2 ? 'V2 — Other party / Tercero' : 'V'+vd.num+' — Additional';
       row([[lbl, vstr||'—'],['Insurance / Aseguradora', vd.ins||''],['Plate / Placa', vd.plate||'']]);
-      if(v('v'+vd.id+'_belongs')) row([["Belongs to / ¿De quién?", v('v'+vd.id+'_belongs')]]);
       if(vd.owner) row([['Owner / Dueño', vd.owner]]);
-      if(v('v'+vd.id+'_claim')) row([['Claim #', v('v'+vd.id+'_claim')]]);
-      const airbags = getTog('v'+vd.id+'_airbags-tg');
-      if(airbags) row([['Airbags / Bolsas de aire', airbags]]);
-      const towed = getTog('v'+vd.id+'_towed-tg');
+      const ab=getTog('v'+vd.id+'_airbags-tg');if(ab)row([['Airbags/Bolsas',ab]]);
+      const towed=getTog('v'+vd.id+'_towed-tg');
       if(towed) row([['Towed / Grúa', towed],['Car location / Ubicación', vd.location||'']]);
     });
   }
@@ -1078,18 +901,20 @@ function generatePDF() {
     fld('Additional notes',intakeNotes);
   }
 
-  if (document.getElementById('comp-switch').checked) {
-    sec('Companion / Acompañante');
-    row([['Full name',v('c_name')],['DOB',formatDate(v('c_dob'))]]);
-    row([['Phone',v('c_tel')],['Email',v('c_email')]]);
-    fld('Address', [v('c_address'),v('c_city'),v('c_state'),v('c_zip')].filter(Boolean).join(', '));
-    row([['Marital',v('c_marital')],['SSN last 4',v('c_ssn')],['Emergency',v('c_emergency')]]);
-    row([['Hospital',v('c_hospital')],['Rescue',getTog('c_rescue-tg')],['Health ins.',v('c_health_ins')]]);
-    const ci = getChecked('c_body-zones');
-    const cn = v('c_injury_notes');
-    fld('Injuries', [ci, cn ? 'Notes: '+cn : ''].filter(Boolean).join('\n'));
-    row([['Employer',v('c_job')],['Wage',v('c_wage')]]);
-    fld('Prior claims', v('c_priors'));
+  if (companions.length > 0) {
+    companions.forEach((cid, cidx) => {
+      sec('Companion '+(cidx+1)+' / Acompañante '+(cidx+1));
+      row([['Full name',v('c'+cid+'_name')],['DOB',formatDate(v('c'+cid+'_dob'))]]);
+      row([['Phone',v('c'+cid+'_tel')],['Email',v('c'+cid+'_email')]]);
+      fld('Address', [v('c'+cid+'_address'),v('c'+cid+'_city'),v('c'+cid+'_state'),v('c'+cid+'_zip')].filter(Boolean).join(', '));
+      row([['Marital',v('c'+cid+'_marital')],['SSN last 4',v('c'+cid+'_ssn')],['Emergency',v('c'+cid+'_emergency')]]);
+      row([['Hospital',v('c'+cid+'_hospital')],['Rescue',getTog('c'+cid+'_rescue-tg')],['Health ins.',v('c'+cid+'_health_ins')]]);
+      const ci = getChecked('c'+cid+'_body-zones');
+      const cn = v('c'+cid+'_injury_notes');
+      fld('Injuries', [ci, cn ? 'Notes: '+cn : ''].filter(Boolean).join('\n'));
+      row([['Employer',v('c'+cid+'_job')],['Wage',v('c'+cid+'_wage')]]);
+      fld('Prior claims', v('c'+cid+'_priors'));
+    });
   }
 
   const clientName = v('name') || 'intake';
@@ -1097,8 +922,426 @@ function generatePDF() {
   doc.save('Intake_'+clientName.replace(/\s+/g,'_')+'_'+dol+'.pdf');
 }
 
-// Init draft list on page load
+// ============================================================
+// MULTIPLE COMPANIONS
+// ============================================================
+let companions = [];
+let cCounter = 0;
+
+function companionBodyZonesHTML() {
+  const zones = [
+    { full: true,  val: 'Head / Cabeza' },
+    { full: true,  val: 'Face / Cara' },
+    { full: true,  val: 'Jaw / Mandíbula' },
+    { full: true,  val: 'Neck / Cuello' },
+    { full: false, val: 'Left shoulder / Hombro izq.' },
+    { full: false, val: 'Right shoulder / Hombro der.' },
+    { full: false, val: 'Left collarbone / Clavícula izq.' },
+    { full: false, val: 'Right collarbone / Clavícula der.' },
+    { full: true,  val: 'Upper back / Espalda alta' },
+    { full: true,  val: 'Mid back / Espalda media' },
+    { full: true,  val: 'Lower back / Espalda baja' },
+    { full: true,  val: 'Chest / Pecho' },
+    { full: true,  val: 'Ribs / Costillas' },
+    { full: true,  val: 'Abdomen / Abdomen' },
+    { full: false, val: 'Left arm / Brazo izq.' },
+    { full: false, val: 'Right arm / Brazo der.' },
+    { full: false, val: 'Left elbow / Codo izq.' },
+    { full: false, val: 'Right elbow / Codo der.' },
+    { full: false, val: 'Left wrist / Muñeca izq.' },
+    { full: false, val: 'Right wrist / Muñeca der.' },
+    { full: false, val: 'Left hand / Mano izq.' },
+    { full: false, val: 'Right hand / Mano der.' },
+    { full: true,  val: 'Hip / Cadera' },
+    { full: false, val: 'Left knee / Rodilla izq.' },
+    { full: false, val: 'Right knee / Rodilla der.' },
+    { full: false, val: 'Left leg / Pierna izq.' },
+    { full: false, val: 'Right leg / Pierna der.' },
+    { full: false, val: 'Left ankle / Tobillo izq.' },
+    { full: false, val: 'Right ankle / Tobillo der.' },
+    { full: false, val: 'Left foot / Pie izq.' },
+    { full: false, val: 'Right foot / Pie der.' },
+  ];
+  const hdr = '<div class="bz-col-hdr">\u2190 Left / Izq.</div><div class="bz-col-hdr" style="justify-content:flex-end;">Right / Der. \u2192</div>';
+  return hdr + zones.map(z =>
+    `<label class="body-zone${z.full?' bz-full':''}"><input type="checkbox" value="${z.val}"><span>${z.val}</span></label>`
+  ).join('');
+}
+
+function addCompanion() {
+  cCounter++;
+  const id = cCounter;
+  companions.push(id);
+  renderCompanions();
+  setTimeout(() => {
+    const el = document.getElementById('companion-' + id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 60);
+}
+
+function removeCompanion(id) {
+  companions = companions.filter(c => c !== id);
+  renderCompanions();
+}
+
+function renderCompanions() {
+  const list = document.getElementById('companion-list');
+
+  // Preserve current values before re-render
+  const saved = {}, savedToggles = {}, savedChecks = {};
+  companions.forEach(id => {
+    ['name','dob','tel','email','address','city','state','zip','marital','ssn',
+     'emergency','hospital','health_ins','job','wage','priors','injury_notes'].forEach(f => {
+      const el = document.getElementById('c'+id+'_'+f);
+      if (el) saved['c'+id+'_'+f] = el.value;
+    });
+    const zones = document.querySelectorAll('#c'+id+'_body-zones input[type=checkbox]');
+    zones.forEach(cb => { savedChecks['c'+id+'_bz_'+cb.value] = cb.checked; });
+    ['rescue'].forEach(tg => {
+      const a = document.querySelector('#c'+id+'_'+tg+'-tg .tog.active');
+      savedToggles['c'+id+'_'+tg+'-tg'] = a ? a.textContent.trim() : '';
+    });
+  });
+
+  if (!companions.length) {
+    list.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:4px 0;">No companions added / Sin acompañantes agregados</div>';
+    return;
+  }
+
+  list.innerHTML = companions.map((id, idx) => {
+    const num = idx + 1;
+    return `<div class="vehicle-item" id="companion-${id}">
+      <div class="vehicle-item-head">
+        <span class="vehicle-label">Companion ${num} / Acompañante ${num}</span>
+        <button class="remove-btn" onclick="removeCompanion(${id})">Remove</button>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Full name <span class="es">/ Nombre completo</span></label><input type="text" id="c${id}_name" placeholder="First Last"></div>
+        <div class="field"><label>Date of birth <span class="es">/ Fecha de nacimiento</span></label><input type="date" id="c${id}_dob"></div>
+        <div class="field"><label>Phone <span class="es">/ Teléfono</span></label><input type="tel" id="c${id}_tel" placeholder="+1 (305) 000-0000"></div>
+        <div class="field"><label>Email <span class="es">/ Correo electrónico</span></label><input type="email" id="c${id}_email" placeholder="example@email.com"></div>
+      </div>
+      <div class="field gap-top">
+        <label>Address <span class="es">/ Dirección</span></label>
+        <div class="address-wrap">
+          <input type="text" id="c${id}_address" placeholder="Start typing address..." autocomplete="off">
+          <div class="address-suggestions" id="c${id}_addr-suggest"></div>
+        </div>
+      </div>
+      <div class="grid-3 gap-top">
+        <div class="field"><label>City <span class="es">/ Ciudad</span></label><input type="text" id="c${id}_city" placeholder="Miami"></div>
+        <div class="field"><label>State <span class="es">/ Estado</span></label><input type="text" id="c${id}_state" placeholder="FL" maxlength="2"></div>
+        <div class="field"><label>ZIP Code</label><input type="text" id="c${id}_zip" placeholder="33101" maxlength="5" inputmode="numeric" oninput="this.value=this.value.replace(/\\D/g,'')"></div>
+      </div>
+      <div class="grid-3 gap-top">
+        <div class="field">
+          <label>Marital status <span class="es">/ Estado civil</span></label>
+          <select id="c${id}_marital">
+            <option value="">— Select —</option>
+            <option>Single / Soltero(a)</option><option>Married / Casado(a)</option>
+            <option>Divorced / Divorciado(a)</option><option>Widowed / Viudo(a)</option>
+          </select>
+        </div>
+        <div class="field"><label>SSN last 4 <span class="es">/ Últimos 4 SS</span></label><input type="text" id="c${id}_ssn" maxlength="4" placeholder="XXXX" inputmode="numeric" oninput="this.value=this.value.replace(/\\D/g,'')"></div>
+        <div class="field"><label>Emergency contact</label><input type="text" id="c${id}_emergency" placeholder="Name — Phone"></div>
+      </div>
+      <div class="grid-3 gap-top">
+        <div class="field"><label>Hospital</label><input type="text" id="c${id}_hospital" placeholder="Hospital name"></div>
+        <div class="field">
+          <label>Rescue <span class="es">/ Rescate</span></label>
+          <div class="toggle-group" id="c${id}_rescue-tg">
+            <div class="tog" onclick="tog(this,'c${id}_rescue-tg')">Yes / Sí</div>
+            <div class="tog" onclick="tog(this,'c${id}_rescue-tg')">No</div>
+          </div>
+        </div>
+        <div class="field"><label>Health insurance <span class="es">/ Seguro médico</span></label><input type="text" id="c${id}_health_ins" placeholder="Provider name"></div>
+      </div>
+      <div class="field gap-top">
+        <label>Injuries <span class="es">/ Lesiones</span></label>
+        <div class="body-zones" id="c${id}_body-zones">${companionBodyZonesHTML()}</div>
+        <textarea id="c${id}_injury_notes" placeholder="Additional notes..." style="min-height:48px; margin-top:8px;"></textarea>
+      </div>
+      <div class="grid-2 gap-top">
+        <div class="field"><label>Employer <span class="es">/ Empleador</span></label><input type="text" id="c${id}_job" placeholder="Company name"></div>
+        <div class="field"><label>Hourly wage <span class="es">/ Salario por hora</span></label><input type="text" id="c${id}_wage" placeholder="$0.00"></div>
+      </div>
+      <div class="field gap-top">
+        <label>Prior accidents or claims <span class="es">/ Reclamos previos</span></label>
+        <textarea id="c${id}_priors" placeholder="Details..." style="min-height:48px;"></textarea>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Restore values
+  Object.keys(saved).forEach(k => { const el = document.getElementById(k); if (el && saved[k]) el.value = saved[k]; });
+  Object.keys(savedToggles).forEach(gid => {
+    const val = savedToggles[gid]; if (!val) return;
+    document.querySelectorAll('#'+gid+' .tog').forEach(t => t.classList.toggle('active', t.textContent.trim() === val));
+  });
+  Object.keys(savedChecks).forEach(k => {
+    // key format: c{id}_bz_{value}
+    const m = k.match(/^(c\d+_bz_)(.+)$/);
+    if (!m) return;
+    const containerId = k.replace('_bz_', '_body-zones').replace(/c(\d+)_body-zones_(.+)$/, 'c$1_body-zones');
+    // Simpler: extract id from key
+    const idMatch = k.match(/^c(\d+)_bz_(.+)$/);
+    if (!idMatch) return;
+    const cid = idMatch[1], val = idMatch[2];
+    const cb = document.querySelector('#c'+cid+'_body-zones input[type=checkbox][value="'+val+'"]');
+    if (cb && savedChecks[k]) { cb.checked = true; cb.closest('.body-zone')?.classList.add('selected'); }
+  });
+
+  // Setup address autocomplete for each companion
+  companions.forEach(id => {
+    setupAddress('c'+id+'_address','c'+id+'_addr-suggest','c'+id+'_city','c'+id+'_state','c'+id+'_zip');
+  });
+}
+
+// ============================================================
+// SIMPLE ADDRESS AUTOCOMPLETE (for car location — no city/state/zip fill)
+// ============================================================
+function setupAddressSimple(inputId, suggestId) {
+  const input = document.getElementById(inputId);
+  const box   = document.getElementById(suggestId);
+  if (!input || !box) return;
+  let timer;
+  input.addEventListener('input', function() {
+    const val = this.value.trim();
+    clearTimeout(timer);
+    if (val.length < 3) { box.classList.remove('show'); return; }
+    box.innerHTML = '<div class="addr-loading">Searching... / Buscando...</div>';
+    box.classList.add('show');
+    timer = setTimeout(() => {
+      const url = 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&countrycodes=us&limit=6&q=' + encodeURIComponent(val);
+      fetch(url)
+        .then(r => r.json())
+        .then(data => {
+          if (!data || !data.length) { box.innerHTML = '<div class="addr-loading">No results / Sin resultados</div>'; return; }
+          box.innerHTML = data.map(d => {
+            const a = d.address || {};
+            const street = [a.house_number, a.road || a.pedestrian || a.path || a.neighbourhood].filter(Boolean).join(' ');
+            const city   = a.city || a.town || a.village || a.suburb || a.county || '';
+            const stRaw  = (a.state || '').trim();
+            const state  = STATE_MAP[stRaw] || (stRaw.length <= 2 ? stRaw.toUpperCase() : stRaw);
+            const zip    = a.postcode || '';
+            const main   = street || d.display_name.split(',')[0];
+            const sec    = [city, state, zip].filter(Boolean).join(', ');
+            const full   = [main, sec].filter(Boolean).join(', ');
+            return `<div class="addr-item" data-full="${full.replace(/"/g,'&quot;')}">
+              <div class="addr-main">${main}</div>
+              ${sec ? `<div class="addr-sec">${sec}</div>` : ''}
+            </div>`;
+          }).join('');
+          box.querySelectorAll('.addr-item').forEach(item => {
+            item.addEventListener('mousedown', function(e) {
+              e.preventDefault();
+              document.getElementById(inputId).value = this.getAttribute('data-full');
+              box.classList.remove('show');
+            });
+          });
+        })
+        .catch(() => { box.innerHTML = '<div class="addr-loading">Could not load. Check connection.</div>'; });
+    }, 450);
+  });
+  input.addEventListener('blur', () => setTimeout(() => box.classList.remove('show'), 150));
+}
+
+// ============================================================
+// DRAFT SAVE / RESTORE SYSTEM
+// (moved from head — was broken inside <script src> tag)
+// ============================================================
+const DRAFT_KEY = 'intake_drafts';
+let currentDraftId = null;
+
+function getDrafts() {
+  try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || '{}'); } catch(e) { return {}; }
+}
+function setDrafts(d) { localStorage.setItem(DRAFT_KEY, JSON.stringify(d)); }
+
+function collectFormData() {
+  const data = { vehicles: [], companions: [], toggles: {}, checkboxes: {}, fields: {} };
+  document.querySelectorAll('input:not([type=checkbox]):not([type=file]), textarea, select').forEach(el => {
+    if (el.id) data.fields[el.id] = el.value;
+  });
+  document.querySelectorAll('[id$="-tg"]').forEach(grp => {
+    const active = grp.querySelector('.tog.active');
+    data.toggles[grp.id] = active ? active.textContent.trim() : '';
+  });
+  document.querySelectorAll('input[type=checkbox]').forEach(cb => {
+    if (cb.value && cb.closest('.body-zones')) {
+      const c = cb.closest('.body-zones');
+      if (c && c.id) data.checkboxes[c.id + '::' + cb.value] = cb.checked;
+    }
+  });
+  data.vehicles  = vehicles.slice();  data.vCounter  = vCounter;
+  data.companions = companions.slice(); data.cCounter = cCounter;
+  vehicles.forEach(id => {
+    ['year','make','model','ins','plate','color','owner','location','claim','belongs'].forEach(f => {
+      const el = document.getElementById('v'+id+'_'+f);
+      if (el) data.fields['v'+id+'_'+f] = el.value;
+    });
+  });
+  return data;
+}
+
+function applyFormData(data) {
+  if (!data) return;
+  vehicles = data.vehicles || []; vCounter = data.vCounter || 0; renderVehicles();
+  companions = data.companions || []; cCounter = data.cCounter || 0; renderCompanions();
+  Object.keys(data.fields || {}).forEach(id => { const el = document.getElementById(id); if (el) el.value = data.fields[id]; });
+  Object.keys(data.toggles || {}).forEach(gid => {
+    const val = data.toggles[gid]; if (!val) return;
+    document.querySelectorAll('#'+gid+' .tog').forEach(t => t.classList.toggle('active', t.textContent.trim() === val));
+  });
+  Object.keys(data.checkboxes || {}).forEach(key => {
+    if (!key.includes('::')) return;
+    const sep = key.indexOf('::');
+    const containerId = key.slice(0, sep), val = key.slice(sep+2);
+    const container = document.getElementById(containerId); if (!container) return;
+    const cb = container.querySelector('input[type=checkbox][value="'+val+'"]');
+    if (cb) { cb.checked = data.checkboxes[key]; cb.closest('.body-zone')?.classList.toggle('selected', cb.checked); }
+  });
+}
+
+function saveDraft() {
+  const drafts = getDrafts();
+  const id = currentDraftId || ('draft_' + Date.now());
+  const clientName = document.getElementById('name')?.value?.trim() || '';
+  const dol = document.getElementById('dol')?.value || '';
+  const label = clientName ? clientName + (dol ? ' \u00b7 ' + dol : '') : (dol || new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'}));
+  drafts[id] = { id, label, ts: Date.now(), data: collectFormData() };
+  setDrafts(drafts); currentDraftId = id; renderDraftList(); showDraftStatus('Saved: ' + label);
+}
+
+function loadDraft(id) {
+  const drafts = getDrafts();
+  if (!drafts[id]) return;
+  currentDraftId = id; applyFormData(drafts[id].data); renderDraftList(); showDraftStatus('Loaded: ' + drafts[id].label);
+}
+
+function deleteDraft(id, e) {
+  e.stopPropagation();
+  const drafts = getDrafts(); delete drafts[id]; setDrafts(drafts);
+  if (currentDraftId === id) { currentDraftId = null; showDraftStatus('Draft deleted'); }
+  renderDraftList();
+}
+
+function newDraft() { currentDraftId = null; clearForm(); showDraftStatus('New intake started'); }
+
+function showDraftStatus(msg) {
+  const el = document.getElementById('draft-status');
+  el.textContent = msg; el.classList.add('saved');
+  setTimeout(() => { el.classList.remove('saved'); el.textContent = currentDraftId ? 'Draft active' : 'No draft saved'; }, 3000);
+  const floatEl = document.getElementById('float-draft-status');
+  if (floatEl) {
+    floatEl.textContent = msg; floatEl.classList.add('saved');
+    setTimeout(() => { if (floatEl) { floatEl.classList.remove('saved'); floatEl.textContent = ''; } }, 3000);
+  }
+}
+
+function renderDraftList() {
+  const drafts = getDrafts();
+  const list = document.getElementById('draft-list');
+  const keys = Object.keys(drafts).sort((a,b) => drafts[b].ts - drafts[a].ts);
+  if (!keys.length) { list.innerHTML = '<span style="font-size:12px;color:var(--text3);">No drafts yet / Sin borradores</span>'; return; }
+  list.innerHTML = keys.map(id => {
+    const d = drafts[id], isActive = id === currentDraftId;
+    return `<span class="draft-slot${isActive?' active':''}" onclick="loadDraft('${id}')" title="Click to load">
+      ${d.label}
+      <span onclick="deleteDraft('${id}',event)" style="margin-left:6px;opacity:0.5;font-size:11px;" title="Delete">\u2715</span>
+    </span>`;
+  }).join('');
+}
+
+// Auto-save every 30s when a draft is active
+setInterval(() => { if (currentDraftId) saveDraft(); }, 30000);
+
+// Init on load
 renderDraftList();
+renderCompanions();
+
+// ============================================================
+// NEW FEATURES
+// ============================================================
+
+// Collapsible sections — click header to toggle
+function toggleSection(head) {
+  head.closest('.section').classList.toggle('collapsed');
+}
+
+// Section fill indicators — green dot when section has any data
+function updateFillDots() {
+  [
+    ['sec-dot-client',   'sec-client'],
+    ['sec-dot-case',     'sec-case'],
+    ['sec-dot-companion','sec-companion'],
+    ['sec-dot-medical',  'sec-medical'],
+    ['sec-dot-vehicles', 'sec-vehicles'],
+    ['sec-dot-notes',    'sec-notes'],
+  ].forEach(([dotId, secId]) => {
+    const sec = document.getElementById(secId);
+    const dot = document.getElementById(dotId);
+    if (!sec || !dot) return;
+    const filled =
+      Array.from(sec.querySelectorAll('input:not([type=checkbox]), textarea, select'))
+        .some(el => !el.disabled && el.value.trim() !== '') ||
+      !!sec.querySelector('.tog.active') ||
+      !!sec.querySelector('input[type=checkbox]:checked');
+    dot.classList.toggle('filled', filled);
+  });
+}
+document.addEventListener('input',  updateFillDots);
+document.addEventListener('change', updateFillDots);
+
+// DOB → age calculator
+function updateAge() {
+  const val  = document.getElementById('dob').value;
+  const span = document.getElementById('dob-age');
+  if (!val || !span) return;
+  const birth = new Date(val + 'T00:00:00');
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  if (age >= 0 && age < 130) {
+    span.textContent = 'Age: ' + age;
+    span.style.display = '';
+  } else {
+    span.style.display = 'none';
+  }
+}
+
+// Phone auto-format → (305) 555-1234
+function fmtPhone(input) {
+  let raw = input.value.replace(/\D/g, '');
+  if (raw.startsWith('1') && raw.length > 10) raw = raw.slice(1);
+  raw = raw.slice(0, 10);
+  if (raw.length >= 7)      input.value = '(' + raw.slice(0,3) + ') ' + raw.slice(3,6) + '-' + raw.slice(6);
+  else if (raw.length >= 4) input.value = '(' + raw.slice(0,3) + ') ' + raw.slice(3);
+  else                      input.value = raw;
+}
+document.addEventListener('input', function(e) {
+  if (e.target.type === 'tel') fmtPhone(e.target);
+});
+
+// Cmd+S / Ctrl+S → save draft
+document.addEventListener('keydown', function(e) {
+  if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+    e.preventDefault();
+    saveDraft();
+  }
+});
+
+// Auto-start draft on very first input (so auto-save interval kicks in immediately)
+document.addEventListener('input', function _autoStart() {
+  if (!currentDraftId) {
+    currentDraftId = 'draft_' + Date.now();
+    renderDraftList();
+    showDraftStatus('Auto-saving...');
+  }
+  document.removeEventListener('input', _autoStart);
+});
+
 </script>
 </body>
 </html>
