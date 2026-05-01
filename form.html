@@ -147,17 +147,56 @@
 
   /* ── DOB age badge ── */
   .age-badge { display: inline-block; font-size: 11px; color: var(--accent); font-family: 'DM Mono', monospace; padding: 2px 7px; background: var(--accent-bg); border-radius: 4px; margin-top: 3px; }
+
+  .skip-link { position: absolute; left: -9999px; top: 0; z-index: 500; padding: 10px 16px; background: var(--accent); color: #fff; font-weight: 600; border-radius: var(--radius-sm); text-decoration: none; }
+  .skip-link:focus { left: 1rem; top: 1rem; outline: none; box-shadow: 0 0 0 3px rgba(26,86,219,0.35); }
+
+  .intake-toolbar { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 1rem; }
+  .progress-track { height: 6px; background: var(--surface2); border-radius: 99px; overflow: hidden; border: 1px solid var(--border); }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #3d7ae8); width: 0%; transition: width 0.28s ease; border-radius: 99px; }
+  .toolbar-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; font-size: 12px; color: var(--text2); }
+  .nav-pills { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .nav-pill { font-size: 12px; font-weight: 500; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.12s; }
+  .nav-pill:hover { border-color: var(--accent-border); color: var(--accent); background: var(--accent-bg); }
+  .nav-pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .toolbar-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: flex-end; margin-top: 10px; }
+  .toolbar-actions .btn { padding: 7px 14px; font-size: 13px; }
+  .intake-ref { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+  .toast { position: fixed; top: 1rem; left: 50%; transform: translateX(-50%) translateY(-120%); z-index: 400; background: var(--text); color: #fff; padding: 10px 18px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; box-shadow: 0 8px 28px rgba(0,0,0,0.18); opacity: 0; transition: transform 0.22s ease, opacity 0.22s ease; pointer-events: none; max-width: min(420px, 92vw); text-align: center; }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+  html[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #121211; --surface: #1c1c19; --surface2: #232320;
+    --border: #35342f; --border2: #45443d;
+    --text: #eeede6; --text2: #b0afa6; --text3: #7f7e76;
+    --accent: #6a9eff; --accent-bg: #1a2744; --accent-border: #355a9e;
+    --danger: #ff7a7a; --danger-bg: #3a2222;
+  }
+
+  @media print {
+    .float-bar, .intake-toolbar, .skip-link, .toast { display: none !important; }
+    body { background: #fff !important; }
+    .section.collapsed .section-body { display: block !important; }
+    .page { max-width: none; padding: 0.5in; }
+    .section { break-inside: avoid; box-shadow: none; }
+  }
 </style>
 </head>
 <body>
-<div class="page">
+<a class="skip-link" href="#main">Skip to form / Ir al formulario</a>
+<div class="page" id="main">
 
   <div class="header">
     <div>
       <div class="header-title">Auto Accident Intake Form</div>
       <div class="header-sub">Personal Injury · Accidente de Auto</div>
     </div>
-    <div class="header-date" id="hdate"></div>
+    <div class="header-date">
+      <div id="hdate"></div>
+      <div class="intake-ref">Session ref / Ref. de sesión: <span id="intake-ref"></span></div>
+    </div>
   </div>
 
   <div class="firm-bar">
@@ -183,6 +222,30 @@
       <div class="tog" onclick="tog(this,'casetype-tg')">Workers Comp</div>
       <div class="tog" onclick="tog(this,'casetype-tg')">Rideshare</div>
       <div class="tog" onclick="tog(this,'casetype-tg')">Other / Otro</div>
+    </div>
+  </div>
+
+  <div class="intake-toolbar" aria-label="Form tools">
+    <div class="toolbar-meta">
+      <span id="prog-label" style="font-weight:600;color:var(--text);">0% complete</span>
+      <span style="color:var(--text3);font-size:11px;">Cmd/Ctrl+S save · Print for paper copy</span>
+    </div>
+    <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-labelledby="prog-label" id="prog-bar-wrap">
+      <div class="progress-fill" id="prog-fill"></div>
+    </div>
+    <div class="nav-pills" style="margin-top:10px;">
+      <button type="button" class="nav-pill" onclick="jumpToSection('sec-client')">Client</button>
+      <button type="button" class="nav-pill" onclick="jumpToSection('sec-case')">Case</button>
+      <button type="button" class="nav-pill" onclick="jumpToSection('sec-companion')">Companions</button>
+      <button type="button" class="nav-pill" onclick="jumpToSection('sec-medical')">Medical</button>
+      <button type="button" class="nav-pill" onclick="jumpToSection('sec-vehicles')">Vehicles</button>
+      <button type="button" class="nav-pill" onclick="jumpToSection('sec-notes')">Notes</button>
+    </div>
+    <div class="toolbar-actions">
+      <button type="button" class="btn" id="theme-btn" onclick="toggleTheme()" title="Toggle light/dark">Dark mode</button>
+      <button type="button" class="btn" onclick="setAllSections(false)">Expand all</button>
+      <button type="button" class="btn" onclick="setAllSections(true)">Collapse all</button>
+      <button type="button" class="btn btn-primary" onclick="copyIntakeSummary()">Copy summary / Copiar resumen</button>
     </div>
   </div>
 
@@ -513,6 +576,8 @@
 
 </div>
 
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
 <!-- Floating action bar -->
 <div class="float-bar">
   <span class="float-status" id="float-draft-status"></span>
@@ -520,8 +585,18 @@
   <button class="btn btn-primary" onclick="generatePDF()" style="padding:7px 16px;font-size:13px;">⬇ Export PDF</button>
 </div>
 <script>
+if (localStorage.getItem('intake_theme') === 'dark') document.documentElement.dataset.theme = 'dark';
 // Date display
 document.getElementById('hdate').textContent = new Date().toLocaleDateString('en-US',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
+(function initIntakeRef() {
+  let r = sessionStorage.getItem('intake_ref');
+  if (!r) {
+    r = (Date.now().toString(36) + Math.random().toString(36).slice(2, 6)).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
+    sessionStorage.setItem('intake_ref', r);
+  }
+  const el = document.getElementById('intake-ref');
+  if (el) el.textContent = r;
+})();
 
 // Body zone checkbox — delegated at document level so companion zones work too
 document.addEventListener('change', function(e) {
@@ -616,6 +691,7 @@ function renderVehicles() {
   });
   // Setup location autocomplete for each vehicle
   vehicles.forEach(id => { setupAddressSimple('v'+id+'_location','v'+id+'_loc-suggest'); });
+  if (typeof updateProgress === 'function') updateProgress();
 }
 
 addVehicle(); addVehicle();
@@ -687,6 +763,127 @@ setupAddress('address','addr-suggest','city','state','zip');
 // Helpers
 function v(id) { const el = document.getElementById(id); return el ? (el.value||'').trim() : ''; }
 function getTog(id) { const a = document.querySelector('#'+id+' .tog.active'); return a ? a.textContent.trim() : ''; }
+
+function syncThemeBtn() {
+  const dark = document.documentElement.dataset.theme === 'dark';
+  const b = document.getElementById('theme-btn');
+  if (b) b.textContent = dark ? 'Light mode / Claro' : 'Dark mode / Oscuro';
+}
+function toggleTheme() {
+  if (document.documentElement.dataset.theme === 'dark') {
+    delete document.documentElement.dataset.theme;
+    localStorage.setItem('intake_theme', 'light');
+  } else {
+    document.documentElement.dataset.theme = 'dark';
+    localStorage.setItem('intake_theme', 'dark');
+  }
+  syncThemeBtn();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(function() { t.classList.remove('show'); }, 2800);
+}
+
+function updateProgress() {
+  let s = 0;
+  const total = 12;
+  if (v('source')) s++;
+  if (v('name')) s++;
+  if (v('tel')) s++;
+  if (v('dol')) s++;
+  if (v('firm')) s++;
+  if (v('email') || v('address')) s++;
+  if (v('accident_state')) s++;
+  if (v('fault') || v('position')) s++;
+  if ((v('description') || '').length > 15) s++;
+  if (document.querySelector('#body-zones input[type=checkbox]:checked')) s++;
+  var hasVeh = vehicles.some(function(id) { return v('v'+id+'_make') || v('v'+id+'_year') || v('v'+id+'_plate'); });
+  if (hasVeh) s++;
+  var notesDone = v('intake_notes') || document.querySelector('#quick-notes-zones input:checked') || getTog('client-rating-tg') || getTog('followup-tg');
+  if (notesDone) s++;
+  var pct = Math.min(100, Math.round((100 * s) / total));
+  var fill = document.getElementById('prog-fill');
+  var wrap = document.getElementById('prog-bar-wrap');
+  var label = document.getElementById('prog-label');
+  if (fill) fill.style.width = pct + '%';
+  if (wrap) wrap.setAttribute('aria-valuenow', String(pct));
+  if (label) {
+    var reqOk = v('source') && v('name') && v('tel') && v('dol');
+    label.textContent = pct + '% · ' + (reqOk ? 'Required fields OK / Listo' : 'Need source, name, phone, DOL / Faltan datos');
+  }
+}
+
+function jumpToSection(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.classList.remove('collapsed');
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function setAllSections(collapsed) {
+  document.querySelectorAll('#main .section').forEach(function(sec) { sec.classList.toggle('collapsed', collapsed); });
+}
+
+function copyIntakeSummary() {
+  var lines = [];
+  lines.push('AUTO ACCIDENT INTAKE — RESUMEN');
+  lines.push('Session ref: ' + (document.getElementById('intake-ref') ? document.getElementById('intake-ref').textContent : ''));
+  lines.push('Generated: ' + new Date().toLocaleString());
+  lines.push('');
+  if (v('firm')) lines.push('Law firm / Firma: ' + v('firm'));
+  lines.push('Source / Fuente: ' + (v('source') || '(missing / falta)'));
+  var ct = getTog('casetype-tg');
+  if (ct) lines.push('Case type / Tipo: ' + ct);
+  lines.push('--- Client / Cliente ---');
+  lines.push('Name: ' + (v('name') || '(missing)') + ' | DOB: ' + formatDate(v('dob')));
+  lines.push('Phone: ' + (v('tel') || '(missing)') + ' | Email: ' + v('email'));
+  var addr = [v('address'), v('city'), v('state'), v('zip')].filter(Boolean).join(', ');
+  if (addr) lines.push('Address: ' + addr);
+  lines.push('--- Case / Caso ---');
+  lines.push('DOL: ' + formatDate(v('dol')) + ' @ ' + formatTime(v('dol_time')));
+  lines.push('Accident state: ' + v('accident_state') + ' | Fault: ' + v('fault') + ' | Position: ' + v('position'));
+  lines.push('Police: ' + getTog('police-tg') + (v('police_report_num') ? ' #' + v('police_report_num') : '') + ' | Rideshare: ' + getTog('rideshare-tg'));
+  if (v('description')) {
+    lines.push('Description (original): ' + v('description'));
+    if (document.getElementById('translate-sw') && document.getElementById('translate-sw').checked && v('description_translated')) {
+      lines.push('Description (EN): ' + v('description_translated'));
+    }
+  }
+  lines.push('--- Medical / Médico ---');
+  lines.push('Hospital: ' + v('hospital') + ' | Rescue: ' + getTog('rescue-tg') + ' | Treating: ' + getTog('treating-tg'));
+  var inj = getChecked('body-zones');
+  if (inj) lines.push('Injuries: ' + inj);
+  if (v('injury_notes')) lines.push('Injury notes: ' + v('injury_notes'));
+  lines.push('Insurance: ' + v('health_ins') + ' | Employer: ' + v('job') + ' | Wage: ' + v('wage'));
+  if (v('priors')) lines.push('Priors: ' + v('priors'));
+  lines.push('--- Vehicles ---');
+  vehicles.forEach(function(id, idx) {
+    var bits = [v('v'+id+'_year'), v('v'+id+'_make'), v('v'+id+'_model'), v('v'+id+'_plate')].filter(Boolean).join(' ');
+    if (bits) lines.push('V' + (idx+1) + ': ' + bits + ' | Ins: ' + v('v'+id+'_ins') + ' | Loc: ' + v('v'+id+'_location'));
+  });
+  if (companions.length) {
+    lines.push('--- Companions / Acompañantes ---');
+    companions.forEach(function(cid, cidx) {
+      lines.push('C' + (cidx+1) + ': ' + v('c'+cid+'_name') + ' | ' + v('c'+cid+'_tel'));
+    });
+  }
+  lines.push('--- Notes ---');
+  lines.push('Attitude: ' + getTog('client-rating-tg') + ' | Follow-up: ' + getTog('followup-tg'));
+  var qn = getChecked('quick-notes-zones');
+  if (qn) lines.push('Quick tags: ' + qn);
+  if (v('intake_notes')) lines.push('Additional: ' + v('intake_notes'));
+  var text = lines.join('\n');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function() { showToast('Copied / Copiado al portapapeles'); }).catch(function() { window.prompt('Copy manually / Copiar manual:', text); });
+  } else {
+    window.prompt('Copy manually / Copiar manual:', text);
+  }
+}
 function getChecked(zoneId) {
   return Array.from(document.querySelectorAll('#'+zoneId+' input[type=checkbox]:checked')).map(c=>c.value).join(', ');
 }
@@ -784,6 +981,8 @@ function clearForm() {
   addVehicle(); addVehicle();
   companions = []; cCounter = 0;
   renderCompanions();
+  updateFillDots();
+  updateProgress();
 }
 
 function generatePDF() {
@@ -1095,6 +1294,7 @@ function renderCompanions() {
   companions.forEach(id => {
     setupAddress('c'+id+'_address','c'+id+'_addr-suggest','c'+id+'_city','c'+id+'_state','c'+id+'_zip');
   });
+  if (typeof updateProgress === 'function') updateProgress();
 }
 
 // ============================================================
@@ -1217,6 +1417,8 @@ function loadDraft(id) {
   const drafts = getDrafts();
   if (!drafts[id]) return;
   currentDraftId = id; applyFormData(drafts[id].data); renderDraftList(); showDraftStatus('Loaded: ' + drafts[id].label);
+  updateFillDots();
+  updateProgress();
 }
 
 function deleteDraft(id, e) {
@@ -1259,6 +1461,8 @@ setInterval(() => { if (currentDraftId) saveDraft(); }, 30000);
 // Init on load
 renderDraftList();
 renderCompanions();
+syncThemeBtn();
+updateProgress();
 
 // ============================================================
 // NEW FEATURES
@@ -1290,8 +1494,9 @@ function updateFillDots() {
     dot.classList.toggle('filled', filled);
   });
 }
-document.addEventListener('input',  updateFillDots);
-document.addEventListener('change', updateFillDots);
+function onFormSync() { updateFillDots(); updateProgress(); }
+document.addEventListener('input', onFormSync);
+document.addEventListener('change', onFormSync);
 
 // DOB → age calculator
 function updateAge() {

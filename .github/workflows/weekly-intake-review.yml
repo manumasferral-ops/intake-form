@@ -1,0 +1,40 @@
+name: Weekly intake form review
+
+on:
+  schedule:
+    # Every Friday 15:00 UTC — edit cron for a different time zone or day
+    - cron: "0 15 * * 5"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  open-agent-task:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const title = `[Weekly] Intake form review — ${new Date().toISOString().slice(0, 10)}`;
+            const body = `## Weekly intake form pass
+
+This issue opens automatically **every Friday** as a reminder to run your Cursor agent on the intake form.
+
+### Steps
+1. Open this repository in Cursor.
+2. Load the personal skill **intake-form-weekly-review** (see \`~/.cursor/skills/intake-form-weekly-review/SKILL.md\` on your machine).
+3. Compare [form.html on main](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/main/form.html) with the live page: https://manumasferral-ops.github.io/intake-form/form.html
+4. Ship improvements via PR (UX, a11y, EN/ES copy, PDF, drafts, validation, layout).
+
+### Done?
+Close this issue after you merge changes or decide no work is needed this week.
+
+---
+_Workflow: \`.github/workflows/weekly-intake-review.yml\`_`;
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body,
+            });
