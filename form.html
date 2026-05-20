@@ -192,10 +192,6 @@
   .dol-quick { display: flex; gap: 6px; align-items: stretch; }
   .dol-quick input { flex: 1; }
   .btn-icon { padding: 8px 10px; font-size: 12px; min-width: auto; }
-  .source-bar { border-color: var(--accent-border); background: var(--accent-bg); }
-  .source-bar.needs-source { box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.25); border-color: var(--danger); }
-  .source-chips { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; margin-top: 6px; }
-  .source-chips .tog { font-size: 12px; padding: 4px 10px; }
   .draft-filter { font-size: 12px; padding: 5px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); width: 100%; max-width: 220px; margin-bottom: 6px; font-family: 'DM Sans', sans-serif; }
   @media (max-width: 600px) {
     .nav-pills { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
@@ -231,28 +227,11 @@
     <input type="text" id="firm" placeholder="Enter law firm name / Nombre de la firma...">
   </div>
 
-  <div class="firm-bar source-bar needs-source" id="source-bar">
+  <div class="firm-bar">
     <label>Source / Fuente <span class="required">*</span></label>
-    <div style="flex:1;min-width:0;">
-      <div id="f-source" style="display:flex;align-items:center;gap:8px;">
-        <input type="text" id="source" placeholder="e.g. AV / Zen / Referral" style="flex:1;" oninput="updateSourceHighlight()" autocomplete="off" list="source-suggestions">
-        <datalist id="source-suggestions">
-          <option value="AV"></option>
-          <option value="Zen"></option>
-          <option value="Google"></option>
-          <option value="Facebook"></option>
-          <option value="Referral"></option>
-          <option value="Walk-in"></option>
-        </datalist>
-        <span class="err-msg">Required / Requerido</span>
-      </div>
-      <div class="source-chips" aria-label="Quick source">
-        <div class="tog" role="button" tabindex="0" onclick="setSource('AV')">AV</div>
-        <div class="tog" role="button" tabindex="0" onclick="setSource('Zen')">Zen</div>
-        <div class="tog" role="button" tabindex="0" onclick="setSource('Google')">Google</div>
-        <div class="tog" role="button" tabindex="0" onclick="setSource('Referral')">Referral</div>
-        <div class="tog" role="button" tabindex="0" onclick="setSource('Walk-in')">Walk-in</div>
-      </div>
+    <div id="f-source" style="flex:1;display:flex;align-items:center;gap:8px;">
+      <input type="text" id="source" placeholder="Source abbreviation / Abreviatura de fuente" style="flex:1;">
+      <span class="err-msg">Required / Requerido</span>
     </div>
   </div>
 
@@ -1536,7 +1515,6 @@ renderDraftList();
 renderCompanions();
 syncThemeBtn();
 updateProgress();
-updateSourceHighlight();
 
 // ============================================================
 // NEW FEATURES — efficiency helpers
@@ -1566,7 +1544,6 @@ function jumpToFirstMissing() {
     }
     if (wrap) wrap.classList.remove('field-error');
   }
-  updateSourceHighlight();
   showToast('All required fields filled / Todo listo');
 }
 
@@ -1583,20 +1560,6 @@ function jumpToNextIncomplete() {
     }
   }
   showToast('All sections have some data / Todas las secciones tienen datos');
-}
-
-function setSource(val) {
-  var el = document.getElementById('source');
-  if (!el) return;
-  el.value = val;
-  updateSourceHighlight();
-  onFormSync();
-  showToast('Source: ' + val);
-}
-
-function updateSourceHighlight() {
-  var bar = document.getElementById('source-bar');
-  if (bar) bar.classList.toggle('needs-source', !v('source'));
 }
 
 function setDolToday() {
@@ -1626,16 +1589,6 @@ function parseLeadPaste(text) {
     out.name = leadName[1].trim().replace(/\s*[-|].*$/, '').trim();
     if (out.name.length > 2 && out.name.length < 80) out.filled.push('name');
   }
-
-  var src = t.match(/\b(AV|Zen|Google|Facebook|Referral|Walk-?in)\b/i);
-  if (src) {
-    var sk = src[1].toLowerCase();
-    var srcMap = { av: 'AV', zen: 'Zen', google: 'Google', facebook: 'Facebook', referral: 'Referral' };
-    out.source = srcMap[sk] || (sk.indexOf('walk') === 0 ? 'Walk-in' : src[1]);
-    out.filled.push('source');
-  }
-  if (/\baccident\s*virtue\b/i.test(t) && !out.source) { out.source = 'AV'; out.filled.push('source'); }
-  if (/\battorney\s*zoom\b/i.test(t) && !out.source) { out.source = 'Zen'; out.filled.push('source'); }
 
   var dolLabel = t.match(/(?:date of loss|dol|fecha del accidente|fecha de (?:la )?p[eé]rdida)\s*[:#]?\s*(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/i);
   if (dolLabel) {
@@ -1679,7 +1632,6 @@ function applyLeadPaste() {
   if (p.name && !v('name')) document.getElementById('name').value = p.name;
   if (p.tel && !v('tel')) document.getElementById('tel').value = p.tel;
   if (p.email && !v('email')) document.getElementById('email').value = p.email;
-  if (p.source && !v('source')) document.getElementById('source').value = p.source;
   if (p.dol && !v('dol')) document.getElementById('dol').value = p.dol;
   if (p.accident_state && !v('accident_state')) document.getElementById('accident_state').value = p.accident_state;
   if (p.tel) fmtPhone(document.getElementById('tel'));
