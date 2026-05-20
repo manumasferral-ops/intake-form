@@ -1570,6 +1570,68 @@ function setDolToday() {
   showToast('DOL set to today / Fecha = hoy');
 }
 
+function accidentStateOption(abbrOrName) {
+  if (!abbrOrName) return '';
+  var raw = String(abbrOrName).trim();
+  var abbr = raw.length === 2 ? raw.toUpperCase() : '';
+  if (!abbr && STATE_MAP) {
+    var titled = raw.replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+    abbr = STATE_MAP[titled] || STATE_MAP[raw] || '';
+    if (!abbr) {
+      for (var sn in STATE_MAP) {
+        if (sn.toLowerCase() === raw.toLowerCase()) { abbr = STATE_MAP[sn]; break; }
+      }
+    }
+  }
+  var sel = document.getElementById('accident_state');
+  if (!sel || !abbr) return '';
+  for (var i = 0; i < sel.options.length; i++) {
+    if (sel.options[i].text.indexOf('(' + abbr + ')') >= 0) return sel.options[i].value;
+  }
+  return '';
+}
+
+function parseUsAddressChunk(chunk) {
+  if (!chunk || !chunk.trim()) return null;
+  var line = chunk.trim().replace(/\s+/g, ' ');
+  var m = line.match(/^(.+?),\s*([^,]+?),\s*([A-Za-z]{2})\s*(\d{5})(?:-\d{4})?/);
+  if (m) {
+    return { address: m[1].trim(), city: m[2].trim(), state: m[3].toUpperCase(), zip: m[4] };
+  }
+  var states = 'Alabama|Alaska|Arizona|Arkansas|California|Colorado|Connecticut|Delaware|Florida|Georgia|Hawaii|Idaho|Illinois|Indiana|Iowa|Kansas|Kentucky|Louisiana|Maine|Maryland|Massachusetts|Michigan|Minnesota|Mississippi|Missouri|Montana|Nebraska|Nevada|New Hampshire|New Jersey|New Mexico|New York|North Carolina|North Dakota|Ohio|Oklahoma|Oregon|Pennsylvania|Rhode Island|South Carolina|South Dakota|Tennessee|Texas|Utah|Vermont|Virginia|Washington|West Virginia|Wisconsin|Wyoming';
+  var re = new RegExp('^(.+?),\\s*([^,]+?),\\s*(' + states + ')\\s*(\\d{5})', 'i');
+  m = line.match(re);
+  if (m) {
+    var stName = m[3].replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+    return { address: m[1].trim(), city: m[2].trim(), state: STATE_MAP[stName] || '', zip: m[4] };
+  }
+  return null;
+}
+
+function parseLeadDate(t) {
+  var dolLabel = t.match(/(?:date of (?:loss|accident|injury|incident)|dol|doa|d\.?\s*o\.?\s*a\.?|accident date|fecha del accidente|fecha de (?:la )?p[eé]rdida|fecha del siniestro)\s*[:#]?\s*(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/i);
+  if (dolLabel) {
+    var y = dolLabel[3].length === 2 ? '20' + dolLabel[3] : dolLabel[3];
+    return y + '-' + dolLabel[1].padStart(2, '0') + '-' + dolLabel[2].padStart(2, '0');
+  }
+  var months = { january:'01', jan:'01', february:'02', feb:'02', march:'03', mar:'03', april:'04', apr:'04', may:'05', june:'06', jun:'06', july:'07', jul:'07', august:'08', aug:'08', september:'09', sep:'09', sept:'09', october:'10', oct:'10', november:'11', nov:'11', december:'12', dec:'12' };
+  var named = t.match(/(?:date of (?:loss|accident|injury|incident)|dol|doa|accident date|fecha del accidente)\s*[:#]?\s*([A-Za-z]+)\s+(\d{1,2}),?\s*(\d{4})/i);
+  if (named && months[named[1].toLowerCase()]) {
+    return named[3] + '-' + months[named[1].toLowerCase()] + '-' + named[2].padStart(2, '0');
+  }
+  var iso = t.match(/(?:date of (?:loss|accident)|dol|doa|accident date)[^\n]{0,40}?(20\d{2})-(\d{2})-(\d{2})/i);
+  if (iso) return iso[1] + '-' + iso[2] + '-' + iso[3];
+  var isoLoose = t.match(/\b(20\d{2})-(\d{2})-(\d{2})\b/);
+  if (isoLoose) return isoLoose[1] + '-' + isoLoose[2] + '-' + isoLoose[3];
+  var usNear = t.match(/(?:date of (?:loss|accident)|dol|doa|accident|injury|incident|loss)[^\n]{0,30}?(\d{1,2})[\/\-.](\d{1,2})[\/\-.](20\d{2})/i);
+  if (usNear) {
+    return usNear[3] + '-' + usNear[1].padStart(2, '0') + '-' + usNear[2].padStart(2, '0');
+  }
+  var us = t.match(/\b(\d{1,2})[\/\-.](\d{1,2})[\/\-.](20\d{2})\b/);
+  if (us) return us[3] + '-' + us[1].padStart(2, '0') + '-' + us[2].padStart(2, '0');
+  return '';
+}
+
 function parseLeadPaste(text) {
   var out = { filled: [] };
   if (!text || !text.trim()) return out;
@@ -1578,42 +1640,81 @@ function parseLeadPaste(text) {
   var email = t.match(/[\w.+-]+@[\w.-]+\.\w{2,}/);
   if (email) { out.email = email[0]; out.filled.push('email'); }
 
-  var phone = t.match(/(?:\+?1[-.\s]?)?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})/);
+  var phone = t.match(/(?:\+?1[-.\s]?)?\(?([0-9]{3})\)?[-.\s.]?([0-9]{3})[-.\s.]?([0-9]{4})/);
   if (phone) {
     out.tel = '(' + phone[1] + ') ' + phone[2] + '-' + phone[3];
     out.filled.push('phone');
   }
 
-  var leadName = t.match(/New Lead\s*[-–—:|]\s*([^\n\r|]+)/i) || t.match(/(?:Client|Nombre|Name)\s*[:=]\s*([^\n\r]+)/i);
+  var leadName = t.match(/New Lead\s*[-–—]\s*(?:[A-Z]{2}\s*[-–—]\s*)?([^\n\r|]+)/i) || t.match(/(?:Client|Nombre|Name)\s*[:=]\s*([^\n\r]+)/i);
   if (leadName) {
-    out.name = leadName[1].trim().replace(/\s*[-|].*$/, '').trim();
+    out.name = leadName[1].trim().replace(/\s*[-|].*$/, '').replace(/\s*[,;]\s*.*$/, '').trim();
     if (out.name.length > 2 && out.name.length < 80) out.filled.push('name');
   }
 
-  var dolLabel = t.match(/(?:date of loss|dol|fecha del accidente|fecha de (?:la )?p[eé]rdida)\s*[:#]?\s*(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/i);
-  if (dolLabel) {
-    var y = dolLabel[3].length === 2 ? '20' + dolLabel[3] : dolLabel[3];
-    out.dol = y + '-' + dolLabel[1].padStart(2, '0') + '-' + dolLabel[2].padStart(2, '0');
-    out.filled.push('DOL');
+  var newLeadSt = t.match(/New Lead\s*[-–—]\s*([A-Z]{2})\b/i);
+  if (newLeadSt) {
+    out.accident_state = accidentStateOption(newLeadSt[1]);
+    if (out.accident_state) out.filled.push('accident state');
   }
 
-  var iso = t.match(/\b(20\d{2})-(\d{2})-(\d{2})\b/);
-  var us = t.match(/\b(\d{1,2})[\/\-](\d{1,2})[\/\-](20\d{2})\b/);
-  if (!out.dol && iso) { out.dol = iso[1] + '-' + iso[2] + '-' + iso[3]; out.filled.push('DOL'); }
-  else if (!out.dol && us) {
-    var mm = us[1].padStart(2, '0'), dd = us[2].padStart(2, '0');
-    out.dol = us[3] + '-' + mm + '-' + dd;
-    out.filled.push('DOL');
+  var accLabel = t.match(/(?:state of accident|accident state|estado del accidente|crash state|incident state|accident location state)\s*[:#]?\s*([A-Za-z\s]{2,}?)(?:\n|$|,)/i);
+  if (accLabel) {
+    var opt = accidentStateOption(accLabel[1].trim());
+    if (opt) { out.accident_state = opt; if (out.filled.indexOf('accident state') < 0) out.filled.push('accident state'); }
   }
 
-  var st = t.match(/\b(Alabama|Alaska|Arizona|Arkansas|California|Colorado|Connecticut|Delaware|Florida|Georgia|Hawaii|Idaho|Illinois|Indiana|Iowa|Kansas|Kentucky|Louisiana|Maine|Maryland|Massachusetts|Michigan|Minnesota|Mississippi|Missouri|Montana|Nebraska|Nevada|New Hampshire|New Jersey|New Mexico|New York|North Carolina|North Dakota|Ohio|Oklahoma|Oregon|Pennsylvania|Rhode Island|South Carolina|South Dakota|Tennessee|Texas|Utah|Vermont|Virginia|Washington|West Virginia|Wisconsin|Wyoming)\b/i);
-  if (st) {
-    var sel = document.getElementById('accident_state');
-    if (sel) {
-      var label = st[1].replace(/\b\w/g, function(c) { return c.toUpperCase(); });
-      for (var i = 0; i < sel.options.length; i++) {
-        if (sel.options[i].text.indexOf(label) === 0) { out.accident_state = sel.options[i].value; out.filled.push('state'); break; }
+  out.dol = parseLeadDate(t);
+  if (out.dol) out.filled.push('DOL');
+
+  var addrLabel = t.match(/(?:^|\n)\s*(?:address|direcci[oó]n|street address|mailing address|client address)\s*[:#]\s*([^\n]+)/i);
+  if (addrLabel) {
+    var parsed = parseUsAddressChunk(addrLabel[1]);
+    if (parsed) {
+      out.address = parsed.address; out.city = parsed.city; out.state = parsed.state; out.zip = parsed.zip;
+      out.filled.push('address');
+    } else if (addrLabel[1].trim().length > 4) {
+      out.address = addrLabel[1].trim();
+      out.filled.push('address');
+    }
+  }
+
+  if (!out.address) {
+    var lines = t.split(/\n+/);
+    for (var li = 0; li < lines.length; li++) {
+      var parsedLine = parseUsAddressChunk(lines[li]);
+      if (parsedLine && /\d/.test(parsedLine.address)) {
+        out.address = parsedLine.address; out.city = parsedLine.city; out.state = parsedLine.state; out.zip = parsedLine.zip;
+        out.filled.push('address');
+        break;
       }
+    }
+  }
+
+  if (!out.city) {
+    var cityL = t.match(/(?:^|\n)\s*city\s*[:#]\s*([^\n,]+)/i);
+    if (cityL) out.city = cityL[1].trim();
+  }
+  if (!out.state) {
+    var stL = t.match(/(?:^|\n)\s*(?:state|st)\s*[:#]\s*([A-Za-z]{2})\b/i);
+    if (stL) out.state = stL[1].toUpperCase();
+  }
+  if (!out.zip) {
+    var zipL = t.match(/(?:^|\n)\s*(?:zip|zip code|postal)\s*[:#]\s*(\d{5})/i);
+    if (zipL) out.zip = zipL[1];
+  }
+  if (out.city && out.filled.indexOf('address') < 0 && (out.address || out.state || out.zip)) out.filled.push('address');
+
+  if (!out.accident_state && out.state) {
+    out.accident_state = accidentStateOption(out.state);
+    if (out.accident_state) out.filled.push('accident state');
+  }
+
+  if (!out.accident_state) {
+    var st = t.match(/\b(Alabama|Alaska|Arizona|Arkansas|California|Colorado|Connecticut|Delaware|Florida|Georgia|Hawaii|Idaho|Illinois|Indiana|Iowa|Kansas|Kentucky|Louisiana|Maine|Maryland|Massachusetts|Michigan|Minnesota|Mississippi|Missouri|Montana|Nebraska|Nevada|New Hampshire|New Jersey|New Mexico|New York|North Carolina|North Dakota|Ohio|Oklahoma|Oregon|Pennsylvania|Rhode Island|South Carolina|South Dakota|Tennessee|Texas|Utah|Vermont|Virginia|Washington|West Virginia|Wisconsin|Wyoming)\b/i);
+    if (st) {
+      out.accident_state = accidentStateOption(st[1]);
+      if (out.accident_state && out.filled.indexOf('accident state') < 0) out.filled.push('accident state');
     }
   }
 
@@ -1625,13 +1726,17 @@ function applyLeadPaste() {
   var p = parseLeadPaste(text);
   var hint = document.getElementById('lead-paste-hint');
   if (!p.filled.length) {
-    if (hint) hint.textContent = 'No fields detected — try pasting lead title, phone, email, or dates.';
+    if (hint) hint.textContent = 'No fields detected — try pasting lead title, phone, email, address, or dates.';
     showToast('Nothing detected / No se detectó nada');
     return;
   }
   if (p.name && !v('name')) document.getElementById('name').value = p.name;
   if (p.tel && !v('tel')) document.getElementById('tel').value = p.tel;
   if (p.email && !v('email')) document.getElementById('email').value = p.email;
+  if (p.address && !v('address')) document.getElementById('address').value = p.address;
+  if (p.city && !v('city')) document.getElementById('city').value = p.city;
+  if (p.state && !v('state')) document.getElementById('state').value = p.state;
+  if (p.zip && !v('zip')) document.getElementById('zip').value = p.zip;
   if (p.dol && !v('dol')) document.getElementById('dol').value = p.dol;
   if (p.accident_state && !v('accident_state')) document.getElementById('accident_state').value = p.accident_state;
   if (p.tel) fmtPhone(document.getElementById('tel'));
