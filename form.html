@@ -193,6 +193,8 @@
   .dol-quick input { flex: 1; }
   .btn-icon { padding: 8px 10px; font-size: 12px; min-width: auto; }
   .draft-filter { font-size: 12px; padding: 5px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); width: 100%; max-width: 220px; margin-bottom: 6px; font-family: 'DM Sans', sans-serif; }
+  .addr-verify-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
+  .addr-verify-status { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; }
   @media (max-width: 600px) {
     .nav-pills { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
     .toolbar-actions { justify-content: flex-start; }
@@ -322,6 +324,10 @@
         <div class="address-wrap">
           <input type="text" id="address" placeholder="Start typing address / Empieza a escribir..." autocomplete="off">
           <div class="address-suggestions" id="addr-suggest"></div>
+        </div>
+        <div class="addr-verify-row">
+          <button type="button" class="btn btn-icon" onclick="fixAddressWithGPS()" title="Look up address and fill city, state, ZIP">📍 Verify address (GPS)</button>
+          <span class="addr-verify-status" id="addr-verify-status"></span>
         </div>
       </div>
       <div class="grid-3 gap-top">
@@ -766,6 +772,84 @@ addVehicle(); addVehicle();
 const addrCache = {};
 const STATE_MAP = {'Alabama':'AL','Alaska':'AK','Arizona':'AZ','Arkansas':'AR','California':'CA','Colorado':'CO','Connecticut':'CT','Delaware':'DE','Florida':'FL','Georgia':'GA','Hawaii':'HI','Idaho':'ID','Illinois':'IL','Indiana':'IN','Iowa':'IA','Kansas':'KS','Kentucky':'KY','Louisiana':'LA','Maine':'ME','Maryland':'MD','Massachusetts':'MA','Michigan':'MI','Minnesota':'MN','Mississippi':'MS','Missouri':'MO','Montana':'MT','Nebraska':'NE','Nevada':'NV','New Hampshire':'NH','New Jersey':'NJ','New Mexico':'NM','New York':'NY','North Carolina':'NC','North Dakota':'ND','Ohio':'OH','Oklahoma':'OK','Oregon':'OR','Pennsylvania':'PA','Rhode Island':'RI','South Carolina':'SC','South Dakota':'SD','Tennessee':'TN','Texas':'TX','Utah':'UT','Vermont':'VT','Virginia':'VA','Washington':'WA','West Virginia':'WV','Wisconsin':'WI','Wyoming':'WY','District of Columbia':'DC'};
 
+function nominatimToParts(a, displayName) {
+  a = a || {};
+  var street = [a.house_number, a.road || a.pedestrian || a.path || a.residential].filter(Boolean).join(' ');
+  var city = a.city || a.town || a.village || a.suburb || a.hamlet || a.county || '';
+  var stRaw = (a.state || '').trim();
+  var state = STATE_MAP[stRaw] || (stRaw.length <= 2 ? stRaw.toUpperCase() : '');
+  var zip = String(a.postcode || '').replace(/\D/g, '').slice(0, 5);
+  return {
+    address: street || (displayName ? displayName.split(',')[0] : ''),
+    city: city,
+    state: state,
+    zip: zip
+  };
+}
+
+function geocodeAddressQuery(query) {
+  if (!query || query.trim().length < 4) return Promise.resolve(null);
+  function tryOne(q) {
+    var url = 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&countrycodes=us&limit=1&q=' + encodeURIComponent(q.trim());
+    return fetch(url)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data || !data.length) return null;
+        return nominatimToParts(data[0].address, data[0].display_name);
+      })
+      .catch(function() { return null; });
+  }
+  return tryOne(query).then(function(parts) {
+    if (parts) return parts;
+    var tail = query.match(/,\s*([A-Za-z\s]+),\s*([A-Z]{2})\s*(\d{5})/);
+    if (tail) return tryOne(tail[1].trim() + ', ' + tail[2] + ' ' + tail[3]);
+    return null;
+  });
+}
+
+function applyGeocodedAddress(parts, alsoAccidentState) {
+  if (!parts) return false;
+  if (parts.address) document.getElementById('address').value = parts.address;
+  if (parts.city) document.getElementById('city').value = parts.city;
+  if (parts.state) document.getElementById('state').value = parts.state;
+  if (parts.zip) document.getElementById('zip').value = parts.zip;
+  if (alsoAccidentState && parts.state) {
+    var opt = accidentStateOption(parts.state);
+    if (opt) document.getElementById('accident_state').value = opt;
+  }
+  onFormSync();
+  return true;
+}
+
+function buildAddressQuery() {
+  var parts = [v('address'), v('city'), v('state'), v('zip')].filter(Boolean);
+  if (parts.length) return parts.join(', ');
+  return v('address');
+}
+
+function fixAddressWithGPS() {
+  var query = buildAddressQuery();
+  var status = document.getElementById('addr-verify-status');
+  if (!query || query.length < 5) {
+    showToast('Enter an address first / Escriba una dirección');
+    if (status) status.textContent = 'Need street or full address';
+    return;
+  }
+  if (status) status.textContent = 'Looking up… / Buscando…';
+  showToast('Verifying address… / Verificando…');
+  geocodeAddressQuery(query).then(function(parts) {
+    if (!parts || (!parts.address && !parts.city)) {
+      if (status) status.textContent = 'No match — check spelling';
+      showToast('Address not found / No encontrada');
+      return;
+    }
+    var street = v('address');
+    applyGeocodedAddress(Object.assign({}, parts, street ? { address: street } : {}), true);
+    if (status) status.textContent = 'OK: ' + [parts.city, parts.state, parts.zip].filter(Boolean).join(' ');
+    showToast('Address verified / Dirección verificada');
+  });
+}
+
 function setupAddress(inputId, suggestId, cityId, stateId, zipId) {
   const input = document.getElementById(inputId);
   const box = document.getElementById(suggestId);
@@ -786,13 +870,10 @@ function setupAddress(inputId, suggestId, cityId, stateId, zipId) {
           addrCache[suggestId] = [];
           box.innerHTML = data.map((d, i) => {
             const a = d.address || {};
-            const street = [a.house_number, a.road || a.pedestrian || a.path || a.neighbourhood].filter(Boolean).join(' ');
-            const city = a.city || a.town || a.village || a.suburb || a.county || '';
-            const stateVal = a.state || '';
-            const zip = a.postcode || '';
-            const main = street || d.display_name.split(',')[0];
-            const sec = [city, stateVal, zip].filter(Boolean).join(', ');
-            addrCache[suggestId][i] = { street: street || main, city, state: stateVal, zip };
+            const parts = nominatimToParts(a, d.display_name);
+            const main = parts.address || d.display_name.split(',')[0];
+            const sec = [parts.city, parts.state, parts.zip].filter(Boolean).join(', ');
+            addrCache[suggestId][i] = parts;
             return `<div class="addr-item" data-idx="${i}" data-group="${suggestId}">
               <div class="addr-main">${main}</div>
               ${sec ? `<div class="addr-sec">${sec}</div>` : ''}
@@ -806,14 +887,12 @@ function setupAddress(inputId, suggestId, cityId, stateId, zipId) {
               const group = this.getAttribute('data-group');
               const r = addrCache[group][idx];
               if (!r) return;
-              document.getElementById(inputId).value = r.street;
+              document.getElementById(inputId).value = r.address;
               if (cityId) document.getElementById(cityId).value = r.city;
-              if (stateId) {
-                const stRaw = (r.state || '').trim();
-                document.getElementById(stateId).value = STATE_MAP[stRaw] || (stRaw.length <= 2 ? stRaw.toUpperCase() : stRaw) || '';
-              }
+              if (stateId) document.getElementById(stateId).value = r.state;
               if (zipId) document.getElementById(zipId).value = r.zip;
               box.classList.remove('show');
+              onFormSync();
             });
           });
         })
@@ -1601,19 +1680,70 @@ function isStateToken(s) {
   return false;
 }
 
+function looksLikePersonName(s) {
+  if (!s || s.length < 3 || isStateToken(s)) return false;
+  if (/^\d/.test(s) || /@/.test(s) || /\(\d{3}\)/.test(s) || /\d{3}.*\d{3}.*\d{4}/.test(s)) return false;
+  if (/\b(Dr|St|Ave|Rd|Blvd|Ln|Ct|Way|Drive|Street)\.?\b/i.test(s)) return false;
+  return /^[A-Za-z][A-Za-z.'-]*(?:\s+[A-Za-z][A-Za-z.'-]*){1,4}$/.test(s.trim());
+}
+
+function nameFromEmail(email) {
+  if (!email) return '';
+  var local = email.split('@')[0].replace(/\d+/g, '');
+  if (local.indexOf('.') >= 0) {
+    return local.split('.').filter(Boolean).map(function(w) {
+      return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+    }).join(' ');
+  }
+  if (local.indexOf('_') >= 0) {
+    return local.split('_').filter(Boolean).map(function(w) {
+      return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+    }).join(' ');
+  }
+  var commonFirst = ['federico','maria','jose','juan','carlos','ana','luis','miguel','pedro','rosa','david','john','james','michael','robert','mary','jennifer','daniel','matthew','anthony','mark','steven','paul','andrew','joshua','kevin','brian','george','edward','ronald','timothy','jason','jeffrey','ryan','jacob','gary','nicholas','eric','jonathan','stephen','justin','scott','brandon','benjamin','samuel','frank','alexander','patrick','jack','adam','nathan','peter','kyle','noah','alan','wayne','carlos','martin','arthur','lawrence','jesse','jordan','bryan','gabriel','joe','albert','victor','martin'];
+  var lower = local.toLowerCase();
+  for (var fi = 0; fi < commonFirst.length; fi++) {
+    var fn = commonFirst[fi];
+    if (lower.indexOf(fn) === 0 && lower.length > fn.length + 2) {
+      var rest = lower.slice(fn.length);
+      return fn.charAt(0).toUpperCase() + fn.slice(1) + ' ' + rest.charAt(0).toUpperCase() + rest.slice(1);
+    }
+  }
+  return '';
+}
+
 function parseLeadName(t) {
   var nl = t.match(/New Lead\s*[-–—]\s*(.+)/i);
   if (nl) {
     var parts = nl[1].split(/\s*[-–—]\s*/).map(function(p) { return p.trim(); }).filter(Boolean);
     for (var i = parts.length - 1; i >= 0; i--) {
-      if (!isStateToken(parts[i]) && parts[i].length > 2 && !/^\d/.test(parts[i])) return parts[i];
+      if (looksLikePersonName(parts[i])) return parts[i];
     }
   }
-  var named = t.match(/(?:Client|Nombre|Name|Lead)\s*[:=]\s*([^\n\r]+)/i);
+
+  var named = t.match(/(?:Client|Nombre|Name|Lead|Caller)\s*[:=]\s*([^\n\r]+)/i);
   if (named) {
     var n = named[1].trim().split(/\s*[-–—|]\s*/)[0].trim();
-    if (n && !isStateToken(n) && n.length > 2) return n;
+    if (looksLikePersonName(n)) return n;
   }
+
+  var lines = t.split(/\n+/).map(function(l) { return l.trim(); }).filter(Boolean);
+  for (var li = 0; li < lines.length; li++) {
+    var line = lines[li];
+    if (/^(new lead|phone|tel|email|address|date|dol|doa|source|fuente)/i.test(line)) continue;
+    if (/^[\d(+@]/.test(line)) continue;
+    if (parseUsAddressChunk(line)) continue;
+    if (looksLikePersonName(line)) return line;
+    var commaName = line.match(/^([A-Za-z][A-Za-z.'-]+),\s*([A-Za-z][A-Za-z.'-]+(?:\s+[A-Za-z][A-Za-z.'-]+)*)$/);
+    if (commaName) return (commaName[2] + ' ' + commaName[1]).trim();
+  }
+
+  var email = t.match(/[\w.+-]+@[\w.-]+\.\w{2,}/);
+  if (email) {
+    var fromEmail = nameFromEmail(email[0]);
+    if (looksLikePersonName(fromEmail)) return fromEmail;
+  }
+
   return '';
 }
 
@@ -1784,20 +1914,45 @@ function applyLeadPaste() {
     showToast('Nothing detected / No se detectó nada');
     return;
   }
-  if (p.name && !v('name')) document.getElementById('name').value = p.name;
-  if (p.tel && !v('tel')) document.getElementById('tel').value = p.tel;
-  if (p.email && !v('email')) document.getElementById('email').value = p.email;
-  if (p.address && !v('address')) document.getElementById('address').value = p.address;
-  if (p.city && !v('city')) document.getElementById('city').value = p.city;
-  if (p.state && !v('state')) document.getElementById('state').value = p.state;
-  if (p.zip && !v('zip')) document.getElementById('zip').value = p.zip;
-  if (p.dol && !v('dol')) document.getElementById('dol').value = p.dol;
-  if (p.accident_state && !v('accident_state')) document.getElementById('accident_state').value = p.accident_state;
+  if (p.name) document.getElementById('name').value = p.name;
+  if (p.tel) document.getElementById('tel').value = p.tel;
+  if (p.email) document.getElementById('email').value = p.email;
+  if (p.address) document.getElementById('address').value = p.address;
+  if (p.city) document.getElementById('city').value = p.city;
+  if (p.state) document.getElementById('state').value = p.state;
+  if (p.zip) document.getElementById('zip').value = p.zip;
+  if (p.dol) document.getElementById('dol').value = p.dol;
+  if (p.accident_state) document.getElementById('accident_state').value = p.accident_state;
   if (p.tel) fmtPhone(document.getElementById('tel'));
-  onFormSync();
-  if (hint) hint.textContent = 'Applied: ' + p.filled.join(', ') + ' (only empty fields filled)';
-  showToast('Lead applied / Lead aplicado');
-  jumpToFirstMissing();
+
+  var addrQuery = [p.address, p.city, p.state, p.zip].filter(Boolean).join(', ');
+  if (!addrQuery && p.address) addrQuery = p.address;
+
+  function finishApply(geoNote) {
+    onFormSync();
+    var msg = 'Applied: ' + p.filled.join(', ');
+    if (geoNote) msg += ' · ' + geoNote;
+    if (hint) hint.textContent = msg;
+    showToast('Lead applied / Lead aplicado');
+    jumpToFirstMissing();
+  }
+
+  if (addrQuery && addrQuery.length > 5) {
+    if (hint) hint.textContent = 'Applied fields — verifying address…';
+    showToast('Verifying address… / Verificando dirección…');
+    geocodeAddressQuery(addrQuery).then(function(parts) {
+      if (parts) {
+        var street = p.address || v('address');
+        applyGeocodedAddress(Object.assign({}, parts, street ? { address: street } : {}), !p.accident_state);
+        finishApply('GPS: ' + [parts.city, parts.state, parts.zip].filter(Boolean).join(' '));
+      } else {
+        finishApply('GPS: could not verify — city/state/ZIP kept from paste');
+      }
+    });
+    return;
+  }
+
+  finishApply('');
 }
 
 function copyClientToLastCompanion() {
