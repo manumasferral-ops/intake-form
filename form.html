@@ -192,6 +192,15 @@
   .dol-quick { display: flex; gap: 6px; align-items: stretch; }
   .dol-quick input { flex: 1; }
   .btn-icon { padding: 8px 10px; font-size: 12px; min-width: auto; }
+  .source-bar { border-color: var(--accent-border); background: var(--accent-bg); }
+  .source-bar.needs-source { box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.25); border-color: var(--danger); }
+  .source-chips { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; margin-top: 6px; }
+  .source-chips .tog { font-size: 12px; padding: 4px 10px; }
+  .draft-filter { font-size: 12px; padding: 5px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); width: 100%; max-width: 220px; margin-bottom: 6px; font-family: 'DM Sans', sans-serif; }
+  @media (max-width: 600px) {
+    .nav-pills { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+    .toolbar-actions { justify-content: flex-start; }
+  }
 
   @media print {
     .float-bar, .intake-toolbar, .skip-link, .toast, .lead-paste, .shortcut-modal { display: none !important; }
@@ -222,11 +231,28 @@
     <input type="text" id="firm" placeholder="Enter law firm name / Nombre de la firma...">
   </div>
 
-  <div class="firm-bar">
-    <label>Source / Fuente <span style="color:var(--danger);font-size:11px;">*</span></label>
-    <div id="f-source" style="flex:1;display:flex;align-items:center;gap:8px;">
-      <input type="text" id="source" placeholder="e.g. AV / Zen" style="flex:1;">
-      <span class="err-msg" style="display:none;font-size:11px;color:var(--danger);">Required</span>
+  <div class="firm-bar source-bar needs-source" id="source-bar">
+    <label>Source / Fuente <span class="required">*</span></label>
+    <div style="flex:1;min-width:0;">
+      <div id="f-source" style="display:flex;align-items:center;gap:8px;">
+        <input type="text" id="source" placeholder="e.g. AV / Zen / Referral" style="flex:1;" oninput="updateSourceHighlight()" autocomplete="off" list="source-suggestions">
+        <datalist id="source-suggestions">
+          <option value="AV"></option>
+          <option value="Zen"></option>
+          <option value="Google"></option>
+          <option value="Facebook"></option>
+          <option value="Referral"></option>
+          <option value="Walk-in"></option>
+        </datalist>
+        <span class="err-msg">Required / Requerido</span>
+      </div>
+      <div class="source-chips" aria-label="Quick source">
+        <div class="tog" role="button" tabindex="0" onclick="setSource('AV')">AV</div>
+        <div class="tog" role="button" tabindex="0" onclick="setSource('Zen')">Zen</div>
+        <div class="tog" role="button" tabindex="0" onclick="setSource('Google')">Google</div>
+        <div class="tog" role="button" tabindex="0" onclick="setSource('Referral')">Referral</div>
+        <div class="tog" role="button" tabindex="0" onclick="setSource('Walk-in')">Walk-in</div>
+      </div>
     </div>
   </div>
 
@@ -606,6 +632,7 @@
   <div class="draft-bar">
     <div>
       <div style="font-size:12px;font-weight:500;color:var(--text2);margin-bottom:4px;">Saved drafts / Borradores guardados</div>
+      <input type="search" class="draft-filter" id="draft-filter" placeholder="Search drafts… / Buscar…" oninput="renderDraftList()" style="display:none;" aria-label="Search drafts">
       <div class="draft-list" id="draft-list"></div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
@@ -1461,8 +1488,15 @@ function showDraftStatus(msg) {
 function renderDraftList() {
   const drafts = getDrafts();
   const list = document.getElementById('draft-list');
-  const keys = Object.keys(drafts).sort((a,b) => drafts[b].ts - drafts[a].ts);
-  if (!keys.length) { list.innerHTML = '<span style="font-size:12px;color:var(--text3);">No drafts yet / Sin borradores</span>'; return; }
+  let keys = Object.keys(drafts).sort((a,b) => drafts[b].ts - drafts[a].ts);
+  const filterEl = document.getElementById('draft-filter');
+  const filterQ = (filterEl && filterEl.value || '').trim().toLowerCase();
+  if (filterEl) filterEl.style.display = keys.length >= 3 ? '' : 'none';
+  if (filterQ) keys = keys.filter(function(id) { return (drafts[id].label || '').toLowerCase().indexOf(filterQ) >= 0; });
+  if (!keys.length) {
+    list.innerHTML = '<span style="font-size:12px;color:var(--text3);">' + (filterQ ? 'No matching drafts' : 'No drafts yet / Sin borradores') + '</span>';
+    return;
+  }
   list.innerHTML = keys.map(id => {
     const d = drafts[id], isActive = id === currentDraftId;
     return `<span class="draft-slot${isActive?' active':''}" onclick="loadDraft('${id}')" title="Click to load">
@@ -1475,11 +1509,34 @@ function renderDraftList() {
 // Auto-save every 30s when a draft is active
 setInterval(() => { if (currentDraftId) saveDraft(); }, 30000);
 
+// Persist default law firm name
+(function initFirmDefault() {
+  var firmEl = document.getElementById('firm');
+  if (!firmEl) return;
+  try {
+    var saved = localStorage.getItem('intake_firm_default');
+    if (saved && !firmEl.value.trim()) firmEl.value = saved;
+    firmEl.addEventListener('input', function() {
+      var val = firmEl.value.trim();
+      if (val) localStorage.setItem('intake_firm_default', val);
+    });
+  } catch (e) {}
+})();
+
+// Warn before closing tab with unsaved intake data
+window.addEventListener('beforeunload', function(e) {
+  if (v('name') || v('tel') || v('source') || v('dol')) {
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
+
 // Init on load
 renderDraftList();
 renderCompanions();
 syncThemeBtn();
 updateProgress();
+updateSourceHighlight();
 
 // ============================================================
 // NEW FEATURES — efficiency helpers
@@ -1509,6 +1566,7 @@ function jumpToFirstMissing() {
     }
     if (wrap) wrap.classList.remove('field-error');
   }
+  updateSourceHighlight();
   showToast('All required fields filled / Todo listo');
 }
 
@@ -1525,6 +1583,20 @@ function jumpToNextIncomplete() {
     }
   }
   showToast('All sections have some data / Todas las secciones tienen datos');
+}
+
+function setSource(val) {
+  var el = document.getElementById('source');
+  if (!el) return;
+  el.value = val;
+  updateSourceHighlight();
+  onFormSync();
+  showToast('Source: ' + val);
+}
+
+function updateSourceHighlight() {
+  var bar = document.getElementById('source-bar');
+  if (bar) bar.classList.toggle('needs-source', !v('source'));
 }
 
 function setDolToday() {
@@ -1556,12 +1628,26 @@ function parseLeadPaste(text) {
   }
 
   var src = t.match(/\b(AV|Zen|Google|Facebook|Referral|Walk-?in)\b/i);
-  if (src) { out.source = src[1]; out.filled.push('source'); }
+  if (src) {
+    var sk = src[1].toLowerCase();
+    var srcMap = { av: 'AV', zen: 'Zen', google: 'Google', facebook: 'Facebook', referral: 'Referral' };
+    out.source = srcMap[sk] || (sk.indexOf('walk') === 0 ? 'Walk-in' : src[1]);
+    out.filled.push('source');
+  }
+  if (/\baccident\s*virtue\b/i.test(t) && !out.source) { out.source = 'AV'; out.filled.push('source'); }
+  if (/\battorney\s*zoom\b/i.test(t) && !out.source) { out.source = 'Zen'; out.filled.push('source'); }
+
+  var dolLabel = t.match(/(?:date of loss|dol|fecha del accidente|fecha de (?:la )?p[eé]rdida)\s*[:#]?\s*(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/i);
+  if (dolLabel) {
+    var y = dolLabel[3].length === 2 ? '20' + dolLabel[3] : dolLabel[3];
+    out.dol = y + '-' + dolLabel[1].padStart(2, '0') + '-' + dolLabel[2].padStart(2, '0');
+    out.filled.push('DOL');
+  }
 
   var iso = t.match(/\b(20\d{2})-(\d{2})-(\d{2})\b/);
   var us = t.match(/\b(\d{1,2})[\/\-](\d{1,2})[\/\-](20\d{2})\b/);
-  if (iso) { out.dol = iso[1] + '-' + iso[2] + '-' + iso[3]; out.filled.push('DOL'); }
-  else if (us) {
+  if (!out.dol && iso) { out.dol = iso[1] + '-' + iso[2] + '-' + iso[3]; out.filled.push('DOL'); }
+  else if (!out.dol && us) {
     var mm = us[1].padStart(2, '0'), dd = us[2].padStart(2, '0');
     out.dol = us[3] + '-' + mm + '-' + dd;
     out.filled.push('DOL');
