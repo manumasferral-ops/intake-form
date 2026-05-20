@@ -787,24 +787,30 @@ function nominatimToParts(a, displayName) {
   };
 }
 
+function arcgisToParts(candidate) {
+  if (!candidate || !candidate.attributes) return null;
+  var score = candidate.score || 0;
+  if (score < 75) return null;
+  var a = candidate.attributes;
+  return {
+    address: a.StAddr || (candidate.address ? candidate.address.split(',')[0].trim() : ''),
+    city: a.City || '',
+    state: a.RegionAbbr || '',
+    zip: String(a.Postal || '').replace(/\D/g, '').slice(0, 5),
+    score: score
+  };
+}
+
 function geocodeAddressQuery(query) {
   if (!query || query.trim().length < 4) return Promise.resolve(null);
-  function tryOne(q) {
-    var url = 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&countrycodes=us&limit=1&q=' + encodeURIComponent(q.trim());
-    return fetch(url)
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (!data || !data.length) return null;
-        return nominatimToParts(data[0].address, data[0].display_name);
-      })
-      .catch(function() { return null; });
-  }
-  return tryOne(query).then(function(parts) {
-    if (parts) return parts;
-    var tail = query.match(/,\s*([A-Za-z\s]+),\s*([A-Z]{2})\s*(\d{5})/);
-    if (tail) return tryOne(tail[1].trim() + ', ' + tail[2] + ' ' + tail[3]);
-    return null;
-  });
+  var url = 'https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?f=json&maxLocations=1&outFields=StAddr,City,RegionAbbr,Postal&SingleLine=' + encodeURIComponent(query.trim());
+  return fetch(url)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var c = data && data.candidates && data.candidates[0];
+      return arcgisToParts(c);
+    })
+    .catch(function() { return null; });
 }
 
 function applyGeocodedAddress(parts, alsoAccidentState) {
@@ -843,9 +849,8 @@ function fixAddressWithGPS() {
       showToast('Address not found / No encontrada');
       return;
     }
-    var street = v('address');
-    applyGeocodedAddress(Object.assign({}, parts, street ? { address: street } : {}), true);
-    if (status) status.textContent = 'OK: ' + [parts.city, parts.state, parts.zip].filter(Boolean).join(' ');
+    applyGeocodedAddress(parts, true);
+    if (status) status.textContent = 'OK: ' + [parts.address, parts.city, parts.state, parts.zip].filter(Boolean).join(', ');
     showToast('Address verified / Dirección verificada');
   });
 }
@@ -1942,11 +1947,10 @@ function applyLeadPaste() {
     showToast('Verifying address… / Verificando dirección…');
     geocodeAddressQuery(addrQuery).then(function(parts) {
       if (parts) {
-        var street = p.address || v('address');
-        applyGeocodedAddress(Object.assign({}, parts, street ? { address: street } : {}), !p.accident_state);
-        finishApply('GPS: ' + [parts.city, parts.state, parts.zip].filter(Boolean).join(' '));
+        applyGeocodedAddress(parts, !p.accident_state);
+        finishApply('Verified: ' + [parts.address, parts.city, parts.state, parts.zip].filter(Boolean).join(', '));
       } else {
-        finishApply('GPS: could not verify — city/state/ZIP kept from paste');
+        finishApply('Could not verify address — kept values from paste');
       }
     });
     return;
