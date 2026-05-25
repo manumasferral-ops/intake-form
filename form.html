@@ -196,7 +196,27 @@
   .btn-icon { padding: 8px 10px; font-size: 12px; min-width: auto; }
   .draft-filter { font-size: 12px; padding: 5px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); width: 100%; max-width: 220px; margin-bottom: 6px; font-family: 'DM Sans', sans-serif; }
   .addr-verify-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
-  .addr-verify-status { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; }
+  .addr-verify-status { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; flex: 1; min-width: 140px; }
+  .addr-verify-badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 999px; margin-left: 6px; vertical-align: middle; letter-spacing: 0.02em; }
+  .addr-verify-badge.verified { background: #e6f4ec; color: var(--success); border: 1px solid #b8e0c8; }
+  .addr-verify-badge.stale { background: var(--danger-bg); color: var(--danger); border: 1px solid #f0c4c0; }
+  .addr-verify-badge.low { background: #fff8e6; color: #9a6700; border: 1px solid #f0e0a8; }
+  html[data-theme="dark"] .addr-verify-badge.verified { background: #1a3328; border-color: #2d5a42; color: #7dcea0; }
+  html[data-theme="dark"] .addr-verify-badge.low { background: #3a3018; border-color: #5a4a20; color: #f0d080; }
+  .addr-confirm-panel { margin-top: 10px; padding: 12px 14px; border: 1px solid var(--accent-border); border-radius: var(--radius-sm); background: var(--accent-bg); display: none; }
+  .addr-confirm-panel.show { display: block; }
+  .addr-confirm-title { font-size: 13px; font-weight: 600; color: var(--accent); margin-bottom: 4px; }
+  .addr-confirm-hint { font-size: 12px; color: var(--text2); margin-bottom: 8px; line-height: 1.45; }
+  .addr-candidate { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); margin-bottom: 6px; cursor: pointer; }
+  .addr-candidate:hover { border-color: var(--accent-border); }
+  .addr-candidate.selected { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(26,86,219,0.12); }
+  .addr-candidate.low { border-color: #e8c96a; background: #fffdf5; }
+  html[data-theme="dark"] .addr-candidate.low { background: #2a2618; border-color: #5a4a20; }
+  .addr-candidate-main { font-size: 13px; font-weight: 500; color: var(--text); }
+  .addr-candidate-meta { font-size: 11px; color: var(--text3); margin-top: 2px; font-family: 'DM Mono', monospace; }
+  .addr-confirm-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .addr-confirm-actions .btn { padding: 7px 14px; font-size: 13px; }
+  .field.addr-stale input { border-color: #e8a87a !important; }
   @media (max-width: 600px) {
     .nav-pills { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
     .toolbar-actions { justify-content: flex-start; }
@@ -321,15 +341,24 @@
           <input type="email" id="email" placeholder="example@email.com">
         </div>
       </div>
-      <div class="field gap-top">
-        <label>Address <span class="es">/ Dirección</span></label>
+      <div class="field gap-top" id="f-address-block">
+        <label>Address <span class="es">/ Dirección</span><span id="addr-verify-badge" class="addr-verify-badge" hidden aria-live="polite"></span></label>
         <div class="address-wrap">
-          <input type="text" id="address" placeholder="Start typing address / Empieza a escribir..." autocomplete="off">
+          <input type="text" id="address" placeholder="Type address — US lookup / Escriba dirección (EE.UU.)" autocomplete="off" aria-describedby="addr-verify-status addr-confirm-hint">
           <div class="address-suggestions" id="addr-suggest"></div>
         </div>
         <div class="addr-verify-row">
-          <button type="button" class="btn btn-icon" onclick="fixAddressWithGPS()" title="Look up address and fill city, state, ZIP">📍 Verify address (GPS)</button>
-          <span class="addr-verify-status" id="addr-verify-status"></span>
+          <button type="button" class="btn btn-icon" onclick="fixAddressWithGPS()" title="Verify with ArcGIS geocoder">📍 Verify address (GPS)</button>
+          <span class="addr-verify-status" id="addr-verify-status">Search &amp; verify use same provider (ArcGIS) / Misma fuente</span>
+        </div>
+        <div class="addr-confirm-panel" id="addr-confirm-panel" role="region" aria-labelledby="addr-confirm-title">
+          <div class="addr-confirm-title" id="addr-confirm-title">Confirm address / Confirmar dirección</div>
+          <p class="addr-confirm-hint" id="addr-confirm-hint"></p>
+          <div id="addr-confirm-candidates"></div>
+          <div class="addr-confirm-actions">
+            <button type="button" class="btn btn-primary" id="addr-accept-btn" onclick="acceptAddressVerification()">Accept / Aceptar</button>
+            <button type="button" class="btn" onclick="dismissAddressVerification()">Keep current / Mantener actual</button>
+          </div>
         </div>
       </div>
       <div class="grid-3 gap-top">
@@ -789,30 +818,105 @@ function nominatimToParts(a, displayName) {
   };
 }
 
-function arcgisToParts(candidate) {
+var ADDR_SCORE_HIGH = 75;
+var ADDR_SCORE_WARN = 60;
+var pendingAddressVerify = null;
+var clientAddressVerifiedFp = '';
+var clientAddrAutoBlurTimer = null;
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+}
+
+function formatAddressLine(parts) {
+  return [parts.address, parts.city, parts.state, parts.zip].filter(Boolean).join(', ');
+}
+
+function addressFingerprint() {
+  return [v('address'), v('city'), v('state'), v('zip')].map(function(x) { return (x || '').toLowerCase(); }).join('|');
+}
+
+function arcgisCandidateToParts(candidate) {
   if (!candidate || !candidate.attributes) return null;
-  var score = candidate.score || 0;
-  if (score < 75) return null;
   var a = candidate.attributes;
-  return {
-    address: a.StAddr || (candidate.address ? candidate.address.split(',')[0].trim() : ''),
+  var score = candidate.score || 0;
+  var parts = {
+    address: a.StAddr || (candidate.address ? String(candidate.address).split(',')[0].trim() : ''),
     city: a.City || '',
-    state: a.RegionAbbr || '',
+    state: String(a.RegionAbbr || '').toUpperCase().slice(0, 2),
     zip: String(a.Postal || '').replace(/\D/g, '').slice(0, 5),
     score: score
   };
+  parts.label = candidate.address || formatAddressLine(parts);
+  return parts;
 }
 
-function geocodeAddressQuery(query) {
-  if (!query || query.trim().length < 4) return Promise.resolve(null);
-  var url = 'https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?f=json&maxLocations=1&outFields=StAddr,City,RegionAbbr,Postal&SingleLine=' + encodeURIComponent(query.trim());
+function geocodeAddressCandidates(query, maxLoc) {
+  if (!query || query.trim().length < 4) return Promise.resolve([]);
+  maxLoc = maxLoc || 3;
+  var url = 'https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?f=json&countryCode=USA&maxLocations=' + maxLoc + '&outFields=StAddr,City,RegionAbbr,Postal&SingleLine=' + encodeURIComponent(query.trim());
   return fetch(url)
     .then(function(r) { return r.json(); })
     .then(function(data) {
-      var c = data && data.candidates && data.candidates[0];
-      return arcgisToParts(c);
+      return ((data && data.candidates) || []).map(arcgisCandidateToParts).filter(Boolean);
     })
-    .catch(function() { return null; });
+    .catch(function() { return []; });
+}
+
+function geocodeAddressQuery(query) {
+  return geocodeAddressCandidates(query, 1).then(function(cands) {
+    var best = cands[0];
+    if (!best || best.score < ADDR_SCORE_WARN) return null;
+    return best;
+  });
+}
+
+function arcgisResolveSuggestion(magicKey, text) {
+  var url = 'https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?f=json&countryCode=USA&maxLocations=3&outFields=StAddr,City,RegionAbbr,Postal&magicKey=' + encodeURIComponent(magicKey);
+  return fetch(url)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var cands = ((data && data.candidates) || []).map(arcgisCandidateToParts).filter(Boolean);
+      if (cands.length) return cands;
+      return text ? geocodeAddressCandidates(text, 3) : [];
+    })
+    .catch(function() { return text ? geocodeAddressCandidates(text, 3) : []; });
+}
+
+function setAddressVerifyStatus(text) {
+  var el = document.getElementById('addr-verify-status');
+  if (el) el.textContent = text;
+}
+
+function setAddressVerifyBadge(kind, label) {
+  var el = document.getElementById('addr-verify-badge');
+  if (!el) return;
+  el.hidden = !kind;
+  el.className = 'addr-verify-badge' + (kind ? (' ' + kind) : '');
+  el.textContent = label || '';
+}
+
+function setAddressStaleUi(isStale) {
+  var block = document.getElementById('f-address-block');
+  if (block) block.classList.toggle('addr-stale', !!isStale);
+}
+
+function markClientAddressStale() {
+  if (clientAddressVerifiedFp && addressFingerprint() !== clientAddressVerifiedFp) {
+    setAddressVerifyBadge('stale', 'Edited / Editado');
+    setAddressStaleUi(true);
+    setAddressVerifyStatus('Changed after verify — re-verify / Cambió — verifique de nuevo');
+  }
+}
+
+function setClientAddressVerified(parts) {
+  clientAddressVerifiedFp = addressFingerprint();
+  setAddressStaleUi(false);
+  var score = parts.score || 0;
+  var kind = score >= ADDR_SCORE_HIGH ? 'verified' : 'low';
+  var label = score >= ADDR_SCORE_HIGH ? 'Verified ✓' : ('Low ' + Math.round(score) + '%');
+  setAddressVerifyBadge(kind, label);
+  setAddressVerifyStatus('ArcGIS ' + Math.round(score) + '% — ' + formatAddressLine(parts));
 }
 
 function applyGeocodedAddress(parts, alsoAccidentState) {
@@ -835,27 +939,166 @@ function buildAddressQuery() {
   return v('address');
 }
 
-function fixAddressWithGPS() {
-  var query = buildAddressQuery();
-  var status = document.getElementById('addr-verify-status');
-  if (!query || query.length < 5) {
-    showToast('Enter an address first / Escriba una dirección');
-    if (status) status.textContent = 'Need street or full address';
+function presentAddressVerification(candidates, opts) {
+  opts = opts || {};
+  if (!candidates || !candidates.length) {
+    setAddressVerifyStatus('No match / Sin coincidencias');
+    showToast('Address not found / No encontrada');
+    if (opts.onDismiss) opts.onDismiss();
     return;
   }
-  if (status) status.textContent = 'Looking up… / Buscando…';
-  showToast('Verifying address… / Verificando…');
-  geocodeAddressQuery(query).then(function(parts) {
-    if (!parts || (!parts.address && !parts.city)) {
-      if (status) status.textContent = 'No match — check spelling';
-      showToast('Address not found / No encontrada');
-      return;
-    }
-    applyGeocodedAddress(parts, true);
-    if (status) status.textContent = 'OK: ' + [parts.address, parts.city, parts.state, parts.zip].filter(Boolean).join(', ');
-    showToast('Address verified / Dirección verificada');
+  pendingAddressVerify = { candidates: candidates, selectedIndex: 0, opts: opts };
+  var panel = document.getElementById('addr-confirm-panel');
+  var hint = document.getElementById('addr-confirm-hint');
+  var list = document.getElementById('addr-confirm-candidates');
+  var current = formatAddressLine({ address: v('address'), city: v('city'), state: v('state'), zip: v('zip') });
+  var hasLow = candidates.some(function(c) { return c.score < ADDR_SCORE_HIGH; });
+  var srcLabels = { gps: 'GPS verify', suggest: 'Search', auto: 'Auto-fill', lead: 'Lead paste' };
+  if (hint) {
+    hint.textContent = (srcLabels[opts.source] || 'Lookup') + ' — choose a match, then Accept. Current: ' + (current || '(empty)') +
+      (hasLow ? ' · ⚠ Low confidence — review before Accept / Baja confianza — revise' : '');
+  }
+  if (list) {
+    list.innerHTML = candidates.map(function(c, i) {
+      var low = c.score < ADDR_SCORE_HIGH;
+      var warn = c.score < ADDR_SCORE_WARN;
+      var cls = 'addr-candidate' + (i === 0 ? ' selected' : '') + (low ? ' low' : '');
+      return '<label class="' + cls + '" data-idx="' + i + '">' +
+        '<input type="radio" name="addr-pick" value="' + i + '"' + (i === 0 ? ' checked' : '') + ' style="margin-top:3px;">' +
+        '<div><div class="addr-candidate-main">' + escapeHtml(c.label || formatAddressLine(c)) + '</div>' +
+        '<div class="addr-candidate-meta">Score ' + Math.round(c.score) +
+        (warn ? ' · too low to accept / muy baja' : (low ? ' · review recommended / revise' : ' · OK')) +
+        '</div></div></label>';
+    }).join('');
+    list.querySelectorAll('.addr-candidate').forEach(function(row) {
+      row.addEventListener('click', function() {
+        var idx = parseInt(row.getAttribute('data-idx'), 10);
+        if (!pendingAddressVerify) return;
+        pendingAddressVerify.selectedIndex = idx;
+        list.querySelectorAll('.addr-candidate').forEach(function(r, j) {
+          r.classList.toggle('selected', j === idx);
+          var inp = r.querySelector('input[type=radio]');
+          if (inp) inp.checked = j === idx;
+        });
+      });
+    });
+  }
+  if (panel) panel.classList.add('show');
+  setAddressVerifyStatus('Select match → Accept / Elija → Aceptar');
+}
+
+function acceptAddressVerification() {
+  if (!pendingAddressVerify) return;
+  var parts = pendingAddressVerify.candidates[pendingAddressVerify.selectedIndex];
+  var opts = pendingAddressVerify.opts || {};
+  if (!parts || parts.score < ADDR_SCORE_WARN) {
+    showToast('Score too low — pick another / Puntuación muy baja');
+    return;
+  }
+  applyGeocodedAddress(parts, !!opts.alsoAccidentState);
+  setClientAddressVerified(parts);
+  var panel = document.getElementById('addr-confirm-panel');
+  if (panel) panel.classList.remove('show');
+  showToast('Address applied / Dirección aplicada');
+  var onAccept = opts.onAccept;
+  pendingAddressVerify = null;
+  if (onAccept) onAccept(parts);
+}
+
+function dismissAddressVerification() {
+  var opts = pendingAddressVerify ? pendingAddressVerify.opts : null;
+  var panel = document.getElementById('addr-confirm-panel');
+  if (panel) panel.classList.remove('show');
+  pendingAddressVerify = null;
+  setAddressVerifyStatus('Kept your entry / Se mantuvo su texto');
+  if (opts && opts.onDismiss) opts.onDismiss();
+}
+
+function fixAddressWithGPS() {
+  var query = buildAddressQuery();
+  if (!query || query.length < 5) {
+    showToast('Enter an address first / Escriba una dirección');
+    setAddressVerifyStatus('Need street or full address / Falta dirección');
+    return;
+  }
+  setAddressVerifyStatus('Looking up ArcGIS… / Buscando…');
+  showToast('Verifying… / Verificando…');
+  geocodeAddressCandidates(query, 3).then(function(cands) {
+    presentAddressVerification(cands, { source: 'gps', alsoAccidentState: true });
   });
 }
+
+function maybeAutoVerifyClientAddress() {
+  var street = v('address');
+  if (street.length < 5) return;
+  if (v('city') && v('state') && v('zip')) return;
+  var panel = document.getElementById('addr-confirm-panel');
+  if (panel && panel.classList.contains('show')) return;
+  var query = buildAddressQuery();
+  if (!query || query.length < 5) return;
+  geocodeAddressCandidates(query, 2).then(function(cands) {
+    if (cands.length) presentAddressVerification(cands, { source: 'auto', alsoAccidentState: false });
+  });
+}
+
+function setupClientAddressArcGIS() {
+  var input = document.getElementById('address');
+  var box = document.getElementById('addr-suggest');
+  if (!input || !box) return;
+  var timer;
+  input.addEventListener('input', function() {
+    markClientAddressStale();
+    var val = this.value.trim();
+    clearTimeout(timer);
+    if (val.length < 3) { box.classList.remove('show'); return; }
+    box.innerHTML = '<div class="addr-loading">Searching ArcGIS… / Buscando…</div>';
+    box.classList.add('show');
+    timer = setTimeout(function() {
+      var url = 'https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/suggest?f=json&countryCode=USA&maxSuggestions=8&text=' + encodeURIComponent(val);
+      fetch(url)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          var sugs = ((data && data.suggestions) || []).filter(function(s) { return !s.isCollection; });
+          if (!sugs.length) {
+            box.innerHTML = '<div class="addr-loading">No results / Sin resultados</div>';
+            return;
+          }
+          addrCache['addr-suggest'] = sugs;
+          box.innerHTML = sugs.map(function(s, i) {
+            return '<div class="addr-item" data-idx="' + i + '" data-group="addr-suggest">' +
+              '<div class="addr-main">' + escapeHtml(s.text || '') + '</div>' +
+              '<div class="addr-sec">ArcGIS · confirm on pick / confirmar al elegir</div></div>';
+          }).join('');
+          box.querySelectorAll('.addr-item').forEach(function(item) {
+            item.addEventListener('mousedown', function(e) {
+              e.preventDefault();
+              var idx = parseInt(item.getAttribute('data-idx'), 10);
+              var s = addrCache['addr-suggest'][idx];
+              if (!s) return;
+              box.classList.remove('show');
+              setAddressVerifyStatus('Resolving… / Resolviendo…');
+              arcgisResolveSuggestion(s.magicKey, s.text).then(function(cands) {
+                presentAddressVerification(cands, { source: 'suggest', alsoAccidentState: false });
+              });
+            });
+          });
+        })
+        .catch(function() {
+          box.innerHTML = '<div class="addr-loading">Could not load / Sin conexión</div>';
+        });
+    }, 400);
+  });
+  input.addEventListener('blur', function() {
+    setTimeout(function() { box.classList.remove('show'); }, 150);
+    clearTimeout(clientAddrAutoBlurTimer);
+    clientAddrAutoBlurTimer = setTimeout(maybeAutoVerifyClientAddress, 500);
+  });
+}
+
+['city', 'state', 'zip'].forEach(function(id) {
+  var el = document.getElementById(id);
+  if (el) el.addEventListener('input', markClientAddressStale);
+});
 
 function setupAddress(inputId, suggestId, cityId, stateId, zipId) {
   const input = document.getElementById(inputId);
@@ -910,7 +1153,7 @@ function setupAddress(inputId, suggestId, cityId, stateId, zipId) {
   input.addEventListener('blur', () => setTimeout(() => box.classList.remove('show'), 150));
 }
 
-setupAddress('address','addr-suggest','city','state','zip');
+setupClientAddressArcGIS();
 
 // Helpers
 function v(id) { const el = document.getElementById(id); return el ? (el.value||'').trim() : ''; }
@@ -1947,15 +2190,23 @@ function applyLeadPaste() {
   }
 
   if (addrQuery && addrQuery.length > 5) {
-    if (hint) hint.textContent = 'Applied fields — verifying address…';
-    showToast('Verifying address… / Verificando dirección…');
-    geocodeAddressQuery(addrQuery).then(function(parts) {
-      if (parts) {
-        applyGeocodedAddress(parts, !p.accident_state);
-        finishApply('Verified: ' + [parts.address, parts.city, parts.state, parts.zip].filter(Boolean).join(', '));
-      } else {
-        finishApply('Could not verify address — kept values from paste');
+    if (hint) hint.textContent = 'Applied fields — confirm address… / Confirme dirección…';
+    showToast('Confirm address… / Confirme dirección…');
+    geocodeAddressCandidates(addrQuery, 3).then(function(cands) {
+      if (!cands.length) {
+        finishApply('Could not verify — kept paste / No verificada');
+        return;
       }
+      presentAddressVerification(cands, {
+        source: 'lead',
+        alsoAccidentState: !p.accident_state,
+        onAccept: function(parts) {
+          finishApply('Address confirmed: ' + formatAddressLine(parts));
+        },
+        onDismiss: function() {
+          finishApply('Kept pasted address / Se mantuvo texto pegado');
+        }
+      });
     });
     return;
   }

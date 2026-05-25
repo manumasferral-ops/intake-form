@@ -23,7 +23,7 @@ This issue opens automatically **every Friday** as a reminder to run your Cursor
 
 ### Steps
 1. Open this repository in Cursor.
-2. Load the personal skill **intake-form-weekly-review** (see \`~/.cursor/skills/intake-form-weekly-review/SKILL.md\` on your machine).
+2. Read **\`.cursor/INTAKE-IMPROVEMENTS.md\`** and **\`.cursor/agents/intake-form.md\`** in this repo (all intake guidance lives here).
 3. Compare [form.html on main](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/main/form.html) with the live page: https://manumasferral-ops.github.io/intake-form/form.html
 4. Ship improvements via PR (UX, a11y, EN/ES copy, PDF, drafts, validation, layout).
 
