@@ -42,9 +42,10 @@
   .field label { font-size: 12px; font-weight: 500; color: var(--text2); }
   .field label .es { color: var(--text3); font-weight: 400; }
   .required { color: var(--danger); margin-left: 2px; }
-  .field-error input, .field-error select, .field-error textarea { border-color: var(--danger) !important; }
-  .err-msg { font-size: 11px; color: var(--danger); display: none; }
+  .field-error input, .field-error select, .field-error textarea { border-color: var(--danger) !important; box-shadow: 0 0 0 3px rgba(192,57,43,0.1) !important; }
+  .err-msg { font-size: 11px; color: var(--danger); display: none; margin-top: 2px; }
   .field-error .err-msg { display: block; }
+  #f-source.field-error input { border-color: var(--danger) !important; box-shadow: 0 0 0 3px rgba(192,57,43,0.1) !important; }
 
   input[type=text], input[type=tel], input[type=email], input[type=date], input[type=time], input[type=number], select, textarea {
     font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text);
@@ -116,6 +117,7 @@
   .btn-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 1.5rem; }
   .btn { font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; padding: 10px 22px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; transition: all 0.15s; }
   .btn:hover { background: var(--surface2); border-color: var(--border2); }
+  .btn:focus-visible, .tog:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .btn-primary { background: var(--text); color: white; border-color: var(--text); }
   .btn-primary:hover { background: #333330; }
   .share-info { font-size: 12px; color: var(--text3); }
@@ -140,7 +142,7 @@
   .sec-dot.filled { background: var(--success); }
 
   /* ── Floating action bar ── */
-  .float-bar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.96); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid var(--border); padding: 9px 1.5rem; display: flex; align-items: center; justify-content: flex-end; gap: 10px; z-index: 200; box-shadow: 0 -4px 16px rgba(0,0,0,0.06); }
+  .float-bar { position: fixed; bottom: 0; left: 0; right: 0; background: color-mix(in srgb, var(--surface) 96%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid var(--border); padding: 9px 1.5rem; display: flex; align-items: center; justify-content: flex-end; gap: 10px; z-index: 200; box-shadow: 0 -4px 16px rgba(0,0,0,0.06); }
   .float-bar .float-status { font-size: 12px; color: var(--text3); font-family: 'DM Mono', monospace; margin-right: auto; }
   .float-bar .float-status.saved { color: var(--success); }
   .page { padding-bottom: 5rem; }
@@ -232,8 +234,8 @@
   <div class="firm-bar">
     <label>Source / Fuente <span class="required">*</span></label>
     <div id="f-source" style="flex:1;display:flex;align-items:center;gap:8px;">
-      <input type="text" id="source" placeholder="Source abbreviation / Abreviatura de fuente" style="flex:1;">
-      <span class="err-msg">Required / Requerido</span>
+      <input type="text" id="source" placeholder="Source abbreviation / Abreviatura de fuente" style="flex:1;" aria-required="true" aria-describedby="err-source" aria-invalid="false">
+      <span class="err-msg" id="err-source" role="alert">Required / Requerido</span>
     </div>
   </div>
 
@@ -301,8 +303,8 @@
       <div class="grid-2">
         <div class="field" id="f-name">
           <label>Full name <span class="es">/ Nombre completo</span> <span class="required">*</span></label>
-          <input type="text" id="name" placeholder="First Last">
-          <span class="err-msg">Required / Requerido</span>
+          <input type="text" id="name" placeholder="First Last" aria-required="true" aria-describedby="err-name" aria-invalid="false">
+          <span class="err-msg" id="err-name" role="alert">Required / Requerido</span>
         </div>
         <div class="field">
           <label>Date of birth <span class="es">/ Fecha de nacimiento</span></label>
@@ -311,8 +313,8 @@
         </div>
         <div class="field" id="f-tel">
           <label>Phone <span class="es">/ Teléfono</span> <span class="required">*</span></label>
-          <input type="tel" id="tel" placeholder="+1 (305) 000-0000">
-          <span class="err-msg">Required / Requerido</span>
+          <input type="tel" id="tel" placeholder="+1 (305) 000-0000" aria-required="true" aria-describedby="err-tel" aria-invalid="false">
+          <span class="err-msg" id="err-tel" role="alert">Required / Requerido</span>
         </div>
         <div class="field">
           <label>Email <span class="es">/ Correo electrónico</span></label>
@@ -374,10 +376,10 @@
         <div class="field" id="f-dol">
           <label>Date of Loss <span class="es">/ Fecha del Accidente</span> <span class="required">*</span></label>
           <div class="dol-quick">
-            <input type="date" id="dol">
+            <input type="date" id="dol" aria-required="true" aria-describedby="err-dol" aria-invalid="false">
             <button type="button" class="btn btn-icon" onclick="setDolToday()" title="Set to today">Today</button>
           </div>
-          <span class="err-msg">Required / Requerido</span>
+          <span class="err-msg" id="err-dol" role="alert">Required / Requerido</span>
         </div>
         <div class="field">
           <label>Approx. Time of Accident <span class="es">/ Hora Aproximada</span></label>
@@ -1008,24 +1010,30 @@ function formatTime(t) {
 }
 
 // Required field validation
+var REQUIRED_FIELDS = [
+  { field: 'f-source', input: 'source', sec: null },
+  { field: 'f-name',   input: 'name',   sec: 'sec-client' },
+  { field: 'f-tel',    input: 'tel',    sec: 'sec-client' },
+  { field: 'f-dol',    input: 'dol',    sec: 'sec-case' },
+];
+
+function setFieldValidation(fieldWrapId, inputId, invalid) {
+  var wrap = document.getElementById(fieldWrapId);
+  var inp = document.getElementById(inputId);
+  if (wrap) wrap.classList.toggle('field-error', invalid);
+  if (inp) inp.setAttribute('aria-invalid', invalid ? 'true' : 'false');
+}
+
 function validateForm() {
-  const required = [
-    { field: 'f-source', input: 'source' },
-    { field: 'f-dol',    input: 'dol' },
-    { field: 'f-name',   input: 'name' },
-    { field: 'f-tel',    input: 'tel' },
-  ];
   let ok = true;
   let firstErr = null;
-  required.forEach(r => {
-    const wrap = document.getElementById(r.field);
+  REQUIRED_FIELDS.forEach(r => {
     const val = v(r.input);
-    if (!val) {
-      if (wrap) wrap.classList.add('field-error');
-      if (!firstErr && wrap) firstErr = wrap;
+    const invalid = !val;
+    setFieldValidation(r.field, r.input, invalid);
+    if (invalid) {
+      if (!firstErr) firstErr = document.getElementById(r.field);
       ok = false;
-    } else {
-      if (wrap) wrap.classList.remove('field-error');
     }
   });
   if (!ok && firstErr) firstErr.scrollIntoView({behavior:'smooth', block:'center'});
@@ -1077,6 +1085,7 @@ function clearForm() {
   document.querySelectorAll('input[type=checkbox]').forEach(cb => { cb.checked = false; cb.closest('.body-zone')?.classList.remove('selected'); });
   document.querySelectorAll('.tog').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.field-error').forEach(f => f.classList.remove('field-error'));
+  REQUIRED_FIELDS.forEach(function(r) { setFieldValidation(r.field, r.input, false); });
   const ssnEl = document.getElementById('ssn'); if(ssnEl){ssnEl.disabled=false;ssnEl.style.opacity='1';}
   const translateSw = document.getElementById('translate-sw'); if(translateSw) translateSw.checked=false;
   const transBox = document.getElementById('translation-box'); if(transBox) transBox.style.display='none';
@@ -1604,12 +1613,7 @@ updateProgress();
 // NEW FEATURES — efficiency helpers
 // ============================================================
 
-var REQUIRED_JUMP = [
-  { field: 'f-source', input: 'source', sec: null },
-  { field: 'f-name', input: 'name', sec: 'sec-client' },
-  { field: 'f-tel', input: 'tel', sec: 'sec-client' },
-  { field: 'f-dol', input: 'dol', sec: 'sec-case' },
-];
+var REQUIRED_JUMP = REQUIRED_FIELDS;
 
 function jumpToFirstMissing() {
   for (var i = 0; i < REQUIRED_JUMP.length; i++) {
@@ -1617,8 +1621,8 @@ function jumpToFirstMissing() {
     var wrap = document.getElementById(r.field);
     if (!v(r.input)) {
       if (r.sec) jumpToSection(r.sec);
+      setFieldValidation(r.field, r.input, true);
       if (wrap) {
-        wrap.classList.add('field-error');
         wrap.scrollIntoView({ behavior: 'smooth', block: 'center' });
         var inp = document.getElementById(r.input);
         if (inp) setTimeout(function(el) { el.focus(); }, 400, inp);
@@ -1626,7 +1630,7 @@ function jumpToFirstMissing() {
       showToast('Fill: ' + r.input + ' / Complete este campo');
       return;
     }
-    if (wrap) wrap.classList.remove('field-error');
+    setFieldValidation(r.field, r.input, false);
   }
   showToast('All required fields filled / Todo listo');
 }
@@ -2072,6 +2076,18 @@ function updateFillDots() {
 function onFormSync() { updateFillDots(); updateProgress(); }
 document.addEventListener('input', onFormSync);
 document.addEventListener('change', onFormSync);
+
+// Clear required-field errors as soon as the user provides a value
+function clearRequiredErrorIfFilled(e) {
+  var id = e.target && e.target.id;
+  if (!id) return;
+  for (var i = 0; i < REQUIRED_FIELDS.length; i++) {
+    var r = REQUIRED_FIELDS[i];
+    if (r.input === id && v(r.input)) setFieldValidation(r.field, r.input, false);
+  }
+}
+document.addEventListener('input', clearRequiredErrorIfFilled);
+document.addEventListener('change', clearRequiredErrorIfFilled);
 
 // DOB → age calculator
 function updateAge() {
