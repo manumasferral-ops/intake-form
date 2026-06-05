@@ -15,7 +15,16 @@ Everything for improving this project lives **in this repo**. Open `~/intake-for
 - **Bilingual** EN/ES on all new UI copy.
 - **Preserve IDs:** `#address`, `#city`, `#state`, `#zip`, `#name`, `#tel`, `#dol`, `#source`, etc. (drafts, PDF, lead paste, automation).
 - **Static hosting** — free geocoders (ArcGIS, Nominatim for companions/vehicles), no API keys, no backend.
-- **UI ideas:** https://21st.dev/community/components — adapt patterns, do not install dependencies.
+- **UI ideas:** https://21st.dev/community/components — adapt small patterns (buttons, fields, cards, feedback), not full layout rewrites.
+
+## Preferred layout (do not replace)
+
+Staff prefer the **current single-page intake**, not a step wizard:
+
+- Scrollable page with **collapsible sections** (Client, Case, Medical, …)
+- **Toolbar:** progress %, **section pills** (jump + expand), dark mode, expand/collapse all, copy/email summary
+- **Lead paste** block at top; **floating** save + PDF bar
+- **Do not** add 21st “Multistep Form” / wizard-only navigation unless explicitly requested again
 
 ## Client address / GPS (implemented)
 
@@ -25,7 +34,7 @@ Everything for improving this project lives **in this repo**. Open `~/intake-for
 - **Stale:** editing fields after verify shows **Edited** until re-verify.
 - **Auto:** blur on `#address` when street exists but city/state/ZIP missing → suggest confirm panel.
 - **Lead paste:** applies fields, then opens confirm panel (no silent overwrite).
-- **Companions / vehicle location:** still use Nominatim via `setupAddress` / `setupAddressSimple`.
+- **All address/location fields** use the same ArcGIS flow: client, each **companion**, each **vehicle car location** (search, 📍 Verify, confirm panel, badges).
 
 ## Friday weekly pass — paste into Cursor / Claude Code
 

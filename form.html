@@ -3,35 +3,73 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Auto Accident Intake Form</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #f5f4f0; --surface: #ffffff; --surface2: #f9f8f5;
-    --border: #e2e0d8; --border2: #cac8c0;
-    --text: #1a1a18; --text2: #6b6a65; --text3: #9e9d98;
-    --accent: #1a56db; --accent-bg: #eff4ff; --accent-border: #bfcfff;
+    --bg: #eceae4; --surface: #ffffff; --surface2: #f6f5f1;
+    --border: #d8d5cc; --border2: #c4c0b6;
+    --text: #141413; --text2: #5c5b56; --text3: #8a8880;
+    --accent: #1a56db; --accent-bg: #eef3ff; --accent-border: #a8c4ff;
+    --accent-deep: #0f3d9e;
     --danger: #c0392b; --danger-bg: #fdecea;
-    --radius: 10px; --radius-sm: 6px;
+    --radius: 12px; --radius-sm: 8px;
+    --shadow-sm: 0 1px 2px rgba(20,20,16,0.05);
+    --shadow-md: 0 8px 28px rgba(20,20,16,0.08);
   }
-  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.5; min-height: 100vh; }
-  .page { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+  body {
+    font-family: 'DM Sans', sans-serif; background: var(--bg);
+    background-image: radial-gradient(ellipse 120% 80% at 50% -20%, rgba(26,86,219,0.07), transparent 55%);
+    color: var(--text); font-size: 15px; line-height: 1.5; min-height: 100vh;
+  }
+  .page { max-width: 880px; margin: 0 auto; padding: 1.5rem 1.25rem 4.5rem; }
 
-  .header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 10px; }
-  .header-title { font-size: 20px; font-weight: 600; color: var(--text); }
-  .header-sub { font-size: 13px; color: var(--text3); margin-top: 2px; }
-  .header-date { font-size: 13px; color: var(--text3); font-family: 'DM Mono', monospace; text-align: right; }
+  .header-card {
+    background: linear-gradient(135deg, var(--accent-deep) 0%, var(--accent) 55%, #3d7ae8 100%);
+    color: #fff; border-radius: var(--radius); padding: 18px 20px 16px; margin-bottom: 1.25rem;
+    box-shadow: var(--shadow-md); display: flex; align-items: flex-start; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px;
+  }
+  .header-card .header-title { font-size: 22px; font-weight: 600; color: #fff; letter-spacing: -0.02em; }
+  .header-card .header-sub { font-size: 13px; color: rgba(255,255,255,0.82); margin-top: 4px; }
+  .header-card .header-date, .header-card .intake-ref { color: rgba(255,255,255,0.75); font-family: 'DM Mono', monospace; font-size: 11px; text-align: right; }
+  .header-card .intake-ref { margin-top: 4px; }
+  .form-version {
+    display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.35); padding: 3px 8px;
+    border-radius: 999px; margin-top: 8px;
+  }
 
-  .firm-bar { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 18px; margin-bottom: 1rem; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .firm-bar {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 12px 18px; margin-bottom: 0.85rem; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    box-shadow: var(--shadow-sm);
+  }
   .firm-bar label { font-size: 12px; font-weight: 500; color: var(--text2); white-space: nowrap; }
   .firm-bar input { font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text); background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 6px 10px; min-width: 220px; flex: 1; }
   .firm-bar input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(26,86,219,0.08); }
 
-  .section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 1rem; overflow: visible; }
-  .section-head { padding: 12px 18px; background: var(--surface2); border-bottom: 1px solid var(--border); border-radius: var(--radius) var(--radius) 0 0; }
-  .section-head-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text2); }
+  .section {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    margin-bottom: 1rem; overflow: visible; box-shadow: var(--shadow-sm);
+    border-left: 4px solid var(--border2);
+  }
+  #sec-client { border-left-color: #3d7ae8; }
+  #sec-case { border-left-color: #7c5cdb; }
+  #sec-companion { border-left-color: #9a6b3a; }
+  #sec-medical { border-left-color: #1a9a6a; }
+  #sec-vehicles { border-left-color: #c45c26; }
+  #sec-notes { border-left-color: #5c5b56; }
+  .section-head {
+    padding: 13px 18px; background: var(--surface2); border-bottom: 1px solid var(--border);
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+  .section-head-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text); }
   .section-body { padding: 16px 18px; }
 
   .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
@@ -118,8 +156,8 @@
   .btn { font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; padding: 10px 22px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; transition: all 0.15s; }
   .btn:hover { background: var(--surface2); border-color: var(--border2); }
   .btn:focus-visible, .tog:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .btn-primary { background: var(--text); color: white; border-color: var(--text); }
-  .btn-primary:hover { background: #333330; }
+  .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent-deep); box-shadow: 0 2px 8px rgba(26,86,219,0.25); }
+  .btn-primary:hover { background: var(--accent-deep); border-color: var(--accent-deep); }
   .share-info { font-size: 12px; color: var(--text3); }
 
   .bz-full { grid-column: 1 / -1; }
@@ -153,13 +191,19 @@
   .skip-link { position: absolute; left: -9999px; top: 0; z-index: 500; padding: 10px 16px; background: var(--accent); color: #fff; font-weight: 600; border-radius: var(--radius-sm); text-decoration: none; }
   .skip-link:focus { left: 1rem; top: 1rem; outline: none; box-shadow: 0 0 0 3px rgba(26,86,219,0.35); }
 
-  .intake-toolbar { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 1rem; }
-  .progress-track { height: 6px; background: var(--surface2); border-radius: 99px; overflow: hidden; border: 1px solid var(--border); }
-  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #3d7ae8); width: 0%; transition: width 0.28s ease; border-radius: 99px; }
+  /* Toolbar stays here in the page — does NOT stick while scrolling / No sigue al bajar */
+  .intake-toolbar {
+    position: static;
+    background: var(--surface); border: 1px solid var(--accent-border); border-radius: var(--radius);
+    padding: 14px 16px; margin-bottom: 1rem; box-shadow: var(--shadow-md);
+  }
+  .progress-track { height: 8px; background: var(--surface2); border-radius: 99px; overflow: hidden; border: 1px solid var(--border); }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent-deep), var(--accent), #5b9aff); width: 0%; transition: width 0.28s ease; border-radius: 99px; }
   .toolbar-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; font-size: 12px; color: var(--text2); }
   .nav-pills { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-  .nav-pill { font-size: 12px; font-weight: 500; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.12s; }
-  .nav-pill:hover { border-color: var(--accent-border); color: var(--accent); background: var(--accent-bg); }
+  .nav-pill { font-size: 12px; font-weight: 600; padding: 7px 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text2); cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.12s; }
+  .nav-pill:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); transform: translateY(-1px); }
+  .nav-pill.active-step { border-color: var(--accent); color: #fff; background: var(--accent); }
   .nav-pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .toolbar-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: flex-end; margin-top: 10px; }
   .toolbar-actions .btn { padding: 7px 14px; font-size: 13px; }
@@ -235,10 +279,11 @@
 <a class="skip-link" href="#main">Skip to form / Ir al formulario</a>
 <div class="page" id="main">
 
-  <div class="header">
+  <div class="header-card">
     <div>
       <div class="header-title">Auto Accident Intake Form</div>
       <div class="header-sub">Personal Injury · Accidente de Auto</div>
+      <span class="form-version">ArcGIS all addresses · reload with ⌘⇧R</span>
     </div>
     <div class="header-date">
       <div id="hdate"></div>
@@ -272,7 +317,7 @@
     </div>
   </div>
 
-  <div class="intake-toolbar" aria-label="Form tools">
+  <div class="intake-toolbar" id="intake-toolbar" aria-label="Form tools">
     <div class="toolbar-meta">
       <span id="prog-label" style="font-weight:600;color:var(--text);">0% complete</span>
       <span style="color:var(--text3);font-size:11px;">⌘S save · ? shortcuts · Paste lead below</span>
@@ -281,12 +326,12 @@
       <div class="progress-fill" id="prog-fill"></div>
     </div>
     <div class="nav-pills" style="margin-top:10px;">
-      <button type="button" class="nav-pill" onclick="jumpToSection('sec-client')">Client</button>
-      <button type="button" class="nav-pill" onclick="jumpToSection('sec-case')">Case</button>
-      <button type="button" class="nav-pill" onclick="jumpToSection('sec-companion')">Companions</button>
-      <button type="button" class="nav-pill" onclick="jumpToSection('sec-medical')">Medical</button>
-      <button type="button" class="nav-pill" onclick="jumpToSection('sec-vehicles')">Vehicles</button>
-      <button type="button" class="nav-pill" onclick="jumpToSection('sec-notes')">Notes</button>
+      <button type="button" class="nav-pill" data-section="sec-client" onclick="jumpToSection('sec-client')">Client</button>
+      <button type="button" class="nav-pill" data-section="sec-case" onclick="jumpToSection('sec-case')">Case</button>
+      <button type="button" class="nav-pill" data-section="sec-companion" onclick="jumpToSection('sec-companion')">Companions</button>
+      <button type="button" class="nav-pill" data-section="sec-medical" onclick="jumpToSection('sec-medical')">Medical</button>
+      <button type="button" class="nav-pill" data-section="sec-vehicles" onclick="jumpToSection('sec-vehicles')">Vehicles</button>
+      <button type="button" class="nav-pill" data-section="sec-notes" onclick="jumpToSection('sec-notes')">Notes</button>
     </div>
     <div class="toolbar-actions">
       <button type="button" class="btn" onclick="jumpToFirstMissing()" title="Scroll to first empty required field">Missing fields</button>
@@ -348,7 +393,7 @@
           <div class="address-suggestions" id="addr-suggest"></div>
         </div>
         <div class="addr-verify-row">
-          <button type="button" class="btn btn-icon" onclick="fixAddressWithGPS()" title="Verify with ArcGIS geocoder">📍 Verify address (GPS)</button>
+          <button type="button" class="btn btn-icon" onclick="fixAddressWithGPSFor('client')" title="Verify with ArcGIS geocoder">📍 Verify address (GPS)</button>
           <span class="addr-verify-status" id="addr-verify-status">Search &amp; verify use same provider (ArcGIS) / Misma fuente</span>
         </div>
         <div class="addr-confirm-panel" id="addr-confirm-panel" role="region" aria-labelledby="addr-confirm-title">
@@ -684,6 +729,7 @@
 <!-- Floating action bar -->
 <div class="float-bar">
   <span class="float-status" id="float-draft-status"></span>
+  <button type="button" class="btn" onclick="var t=document.getElementById('intake-toolbar');if(t)t.scrollIntoView({behavior:'smooth',block:'start'});" title="Scroll back to progress &amp; section tools / Volver a herramientas" style="padding:7px 12px;font-size:13px;">↑ Tools / Herramientas</button>
   <button class="btn" onclick="saveDraft()" title="Save draft (Cmd+S / Ctrl+S)" style="padding:7px 16px;font-size:13px;">💾 Save draft</button>
   <button class="btn btn-primary" onclick="generatePDF()" style="padding:7px 16px;font-size:13px;">⬇ Export PDF</button>
 </div>
@@ -776,11 +822,24 @@ function renderVehicles() {
             <div class="tog" onclick="tog(this,'v${id}_towed-tg')">No</div>
           </div>
         </div>
-        <div class="field" style="flex:1;min-width:180px;">
-          <label>Car location / Ubicación del vehículo</label>
+        <div class="field gap-top" id="v${id}-f-loc-block" style="flex:1;min-width:100%;">
+          <label>Car location / Ubicación del vehículo <span id="v${id}-loc-badge" class="addr-verify-badge" hidden aria-live="polite"></span></label>
           <div class="address-wrap">
-            <input type="text" id="v${id}_location" placeholder="Tow yard, address..." autocomplete="off">
+            <input type="text" id="v${id}_location" placeholder="Tow yard, address… / Grúa, dirección" autocomplete="off">
             <div class="address-suggestions" id="v${id}_loc-suggest"></div>
+          </div>
+          <div class="addr-verify-row">
+            <button type="button" class="btn btn-icon" onclick="fixAddressWithGPSFor('v${id}loc')">📍 Verify location (GPS)</button>
+            <span class="addr-verify-status" id="v${id}-loc-verify-status">ArcGIS / Misma verificación</span>
+          </div>
+          <div class="addr-confirm-panel" id="v${id}-addr-confirm-panel" role="region">
+            <div class="addr-confirm-title">Confirm location / Confirmar ubicación</div>
+            <p class="addr-confirm-hint" id="v${id}-addr-confirm-hint"></p>
+            <div id="v${id}-addr-confirm-candidates"></div>
+            <div class="addr-confirm-actions">
+              <button type="button" class="btn btn-primary" onclick="acceptAddressVerification()">Accept / Aceptar</button>
+              <button type="button" class="btn" onclick="dismissAddressVerification()">Keep current / Mantener</button>
+            </div>
           </div>
         </div>
       </div>
@@ -793,7 +852,7 @@ function renderVehicles() {
     if (el && saved[key]) el.value = saved[key];
   });
   // Setup location autocomplete for each vehicle
-  vehicles.forEach(id => { setupAddressSimple('v'+id+'_location','v'+id+'_loc-suggest'); });
+  vehicles.forEach(function(id) { setupArcGISAddressGroup(resolveAddrGroup('v' + id + 'loc')); });
   if (typeof updateProgress === 'function') updateProgress();
 }
 
@@ -803,26 +862,11 @@ addVehicle(); addVehicle();
 const addrCache = {};
 const STATE_MAP = {'Alabama':'AL','Alaska':'AK','Arizona':'AZ','Arkansas':'AR','California':'CA','Colorado':'CO','Connecticut':'CT','Delaware':'DE','Florida':'FL','Georgia':'GA','Hawaii':'HI','Idaho':'ID','Illinois':'IL','Indiana':'IN','Iowa':'IA','Kansas':'KS','Kentucky':'KY','Louisiana':'LA','Maine':'ME','Maryland':'MD','Massachusetts':'MA','Michigan':'MI','Minnesota':'MN','Mississippi':'MS','Missouri':'MO','Montana':'MT','Nebraska':'NE','Nevada':'NV','New Hampshire':'NH','New Jersey':'NJ','New Mexico':'NM','New York':'NY','North Carolina':'NC','North Dakota':'ND','Ohio':'OH','Oklahoma':'OK','Oregon':'OR','Pennsylvania':'PA','Rhode Island':'RI','South Carolina':'SC','South Dakota':'SD','Tennessee':'TN','Texas':'TX','Utah':'UT','Vermont':'VT','Virginia':'VA','Washington':'WA','West Virginia':'WV','Wisconsin':'WI','Wyoming':'WY','District of Columbia':'DC'};
 
-function nominatimToParts(a, displayName) {
-  a = a || {};
-  var street = [a.house_number, a.road || a.pedestrian || a.path || a.residential].filter(Boolean).join(' ');
-  var city = a.city || a.town || a.village || a.suburb || a.hamlet || a.county || '';
-  var stRaw = (a.state || '').trim();
-  var state = STATE_MAP[stRaw] || (stRaw.length <= 2 ? stRaw.toUpperCase() : '');
-  var zip = String(a.postcode || '').replace(/\D/g, '').slice(0, 5);
-  return {
-    address: street || (displayName ? displayName.split(',')[0] : ''),
-    city: city,
-    state: state,
-    zip: zip
-  };
-}
-
 var ADDR_SCORE_HIGH = 75;
 var ADDR_SCORE_WARN = 60;
 var pendingAddressVerify = null;
-var clientAddressVerifiedFp = '';
-var clientAddrAutoBlurTimer = null;
+var addrVerifiedFp = {};
+var addrBlurTimers = {};
 
 function escapeHtml(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
@@ -832,8 +876,33 @@ function formatAddressLine(parts) {
   return [parts.address, parts.city, parts.state, parts.zip].filter(Boolean).join(', ');
 }
 
-function addressFingerprint() {
-  return [v('address'), v('city'), v('state'), v('zip')].map(function(x) { return (x || '').toLowerCase(); }).join('|');
+function resolveAddrGroup(key) {
+  if (key === 'client') {
+    return { key: 'client', mode: 'full', street: 'address', city: 'city', state: 'state', zip: 'zip', suggest: 'addr-suggest', panel: 'addr-confirm-panel', hint: 'addr-confirm-hint', list: 'addr-confirm-candidates', status: 'addr-verify-status', badge: 'addr-verify-badge', block: 'f-address-block', alsoAccident: true };
+  }
+  var cm = String(key).match(/^c(\d+)$/);
+  if (cm) {
+    var cid = cm[1];
+    return { key: key, mode: 'full', street: 'c' + cid + '_address', city: 'c' + cid + '_city', state: 'c' + cid + '_state', zip: 'c' + cid + '_zip', suggest: 'c' + cid + '_addr-suggest', panel: 'c' + cid + '-addr-confirm-panel', hint: 'c' + cid + '-addr-confirm-hint', list: 'c' + cid + '-addr-confirm-candidates', status: 'c' + cid + '-addr-verify-status', badge: 'c' + cid + '-addr-verify-badge', block: 'c' + cid + '-f-address-block', alsoAccident: false };
+  }
+  var vm = String(key).match(/^v(\d+)loc$/);
+  if (vm) {
+    var vid = vm[1];
+    return { key: key, mode: 'single', street: 'v' + vid + '_location', city: null, state: null, zip: null, suggest: 'v' + vid + '_loc-suggest', panel: 'v' + vid + '-addr-confirm-panel', hint: 'v' + vid + '-addr-confirm-hint', list: 'v' + vid + '-addr-confirm-candidates', status: 'v' + vid + '-loc-verify-status', badge: 'v' + vid + '-loc-badge', block: 'v' + vid + '-f-loc-block', alsoAccident: false };
+  }
+  return null;
+}
+
+function addressFingerprintForGroup(g) {
+  if (!g) return '';
+  if (g.mode === 'single') return v(g.street).toLowerCase();
+  return [v(g.street), g.city ? v(g.city) : '', g.state ? v(g.state) : '', g.zip ? v(g.zip) : ''].map(function(x) { return (x || '').toLowerCase(); }).join('|');
+}
+
+function currentLineForGroup(g) {
+  if (!g) return '';
+  if (g.mode === 'single') return v(g.street);
+  return formatAddressLine({ address: v(g.street), city: v(g.city), state: v(g.state), zip: v(g.zip) });
 }
 
 function arcgisCandidateToParts(candidate) {
@@ -883,75 +952,97 @@ function arcgisResolveSuggestion(magicKey, text) {
     .catch(function() { return text ? geocodeAddressCandidates(text, 3) : []; });
 }
 
-function setAddressVerifyStatus(text) {
-  var el = document.getElementById('addr-verify-status');
+function setAddressVerifyStatus(text, g) {
+  if (!g && pendingAddressVerify) g = resolveAddrGroup(pendingAddressVerify.groupKey);
+  if (!g) g = resolveAddrGroup('client');
+  var el = g && document.getElementById(g.status);
   if (el) el.textContent = text;
 }
 
-function setAddressVerifyBadge(kind, label) {
-  var el = document.getElementById('addr-verify-badge');
+function setAddressVerifyBadgeForGroup(g, kind, label) {
+  if (!g || !g.badge) return;
+  var el = document.getElementById(g.badge);
   if (!el) return;
   el.hidden = !kind;
   el.className = 'addr-verify-badge' + (kind ? (' ' + kind) : '');
   el.textContent = label || '';
 }
 
-function setAddressStaleUi(isStale) {
-  var block = document.getElementById('f-address-block');
+function setAddressStaleUiForGroup(g, isStale) {
+  if (!g || !g.block) return;
+  var block = document.getElementById(g.block);
   if (block) block.classList.toggle('addr-stale', !!isStale);
 }
 
-function markClientAddressStale() {
-  if (clientAddressVerifiedFp && addressFingerprint() !== clientAddressVerifiedFp) {
-    setAddressVerifyBadge('stale', 'Edited / Editado');
-    setAddressStaleUi(true);
-    setAddressVerifyStatus('Changed after verify — re-verify / Cambió — verifique de nuevo');
+function markAddressStale(groupKey) {
+  var g = resolveAddrGroup(groupKey);
+  if (!g) return;
+  if (addrVerifiedFp[g.key] && addressFingerprintForGroup(g) !== addrVerifiedFp[g.key]) {
+    setAddressVerifyBadgeForGroup(g, 'stale', 'Edited / Editado');
+    setAddressStaleUiForGroup(g, true);
+    setAddressVerifyStatus('Changed after verify — re-verify / Cambió — verifique de nuevo', g);
   }
 }
 
-function setClientAddressVerified(parts) {
-  clientAddressVerifiedFp = addressFingerprint();
-  setAddressStaleUi(false);
+function setAddressVerifiedForGroup(g, parts) {
+  if (!g) return;
+  addrVerifiedFp[g.key] = addressFingerprintForGroup(g);
+  setAddressStaleUiForGroup(g, false);
   var score = parts.score || 0;
   var kind = score >= ADDR_SCORE_HIGH ? 'verified' : 'low';
   var label = score >= ADDR_SCORE_HIGH ? 'Verified ✓' : ('Low ' + Math.round(score) + '%');
-  setAddressVerifyBadge(kind, label);
-  setAddressVerifyStatus('ArcGIS ' + Math.round(score) + '% — ' + formatAddressLine(parts));
+  setAddressVerifyBadgeForGroup(g, kind, label);
+  setAddressVerifyStatus('ArcGIS ' + Math.round(score) + '% — ' + formatAddressLine(parts), g);
 }
 
-function applyGeocodedAddress(parts, alsoAccidentState) {
-  if (!parts) return false;
-  if (parts.address) document.getElementById('address').value = parts.address;
-  if (parts.city) document.getElementById('city').value = parts.city;
-  if (parts.state) document.getElementById('state').value = parts.state;
-  if (parts.zip) document.getElementById('zip').value = parts.zip;
-  if (alsoAccidentState && parts.state) {
-    var opt = accidentStateOption(parts.state);
-    if (opt) document.getElementById('accident_state').value = opt;
+function applyGeocodedToGroup(g, parts, alsoAccidentState) {
+  if (!g || !parts) return false;
+  if (g.mode === 'single') {
+    var el = document.getElementById(g.street);
+    if (el) el.value = formatAddressLine(parts);
+  } else {
+    if (parts.address) { var s = document.getElementById(g.street); if (s) s.value = parts.address; }
+    if (parts.city && g.city) { var c = document.getElementById(g.city); if (c) c.value = parts.city; }
+    if (parts.state && g.state) { var st = document.getElementById(g.state); if (st) st.value = parts.state; }
+    if (parts.zip && g.zip) { var z = document.getElementById(g.zip); if (z) z.value = parts.zip; }
+    if (alsoAccidentState && parts.state) {
+      var opt = accidentStateOption(parts.state);
+      if (opt) document.getElementById('accident_state').value = opt;
+    }
   }
   onFormSync();
   return true;
 }
 
-function buildAddressQuery() {
-  var parts = [v('address'), v('city'), v('state'), v('zip')].filter(Boolean);
+function buildAddressQueryForGroup(g) {
+  if (!g) return '';
+  if (g.mode === 'single') return v(g.street);
+  var parts = [v(g.street), g.city ? v(g.city) : '', g.state ? v(g.state) : '', g.zip ? v(g.zip) : ''].filter(Boolean);
   if (parts.length) return parts.join(', ');
-  return v('address');
+  return v(g.street);
+}
+
+function hideAddrPanelForGroup(g) {
+  if (!g) return;
+  var panel = document.getElementById(g.panel);
+  if (panel) panel.classList.remove('show');
 }
 
 function presentAddressVerification(candidates, opts) {
   opts = opts || {};
+  var groupKey = opts.groupKey || 'client';
+  var g = resolveAddrGroup(groupKey);
   if (!candidates || !candidates.length) {
-    setAddressVerifyStatus('No match / Sin coincidencias');
+    setAddressVerifyStatus('No match / Sin coincidencias', g);
     showToast('Address not found / No encontrada');
     if (opts.onDismiss) opts.onDismiss();
     return;
   }
-  pendingAddressVerify = { candidates: candidates, selectedIndex: 0, opts: opts };
-  var panel = document.getElementById('addr-confirm-panel');
-  var hint = document.getElementById('addr-confirm-hint');
-  var list = document.getElementById('addr-confirm-candidates');
-  var current = formatAddressLine({ address: v('address'), city: v('city'), state: v('state'), zip: v('zip') });
+  pendingAddressVerify = { candidates: candidates, selectedIndex: 0, opts: opts, groupKey: groupKey };
+  var panel = g && document.getElementById(g.panel);
+  var hint = g && document.getElementById(g.hint);
+  var list = g && document.getElementById(g.list);
+  var current = currentLineForGroup(g);
   var hasLow = candidates.some(function(c) { return c.score < ADDR_SCORE_HIGH; });
   var srcLabels = { gps: 'GPS verify', suggest: 'Search', auto: 'Auto-fill', lead: 'Lead paste' };
   if (hint) {
@@ -959,12 +1050,13 @@ function presentAddressVerification(candidates, opts) {
       (hasLow ? ' · ⚠ Low confidence — review before Accept / Baja confianza — revise' : '');
   }
   if (list) {
+    var pickName = 'addr-pick-' + groupKey;
     list.innerHTML = candidates.map(function(c, i) {
       var low = c.score < ADDR_SCORE_HIGH;
       var warn = c.score < ADDR_SCORE_WARN;
       var cls = 'addr-candidate' + (i === 0 ? ' selected' : '') + (low ? ' low' : '');
       return '<label class="' + cls + '" data-idx="' + i + '">' +
-        '<input type="radio" name="addr-pick" value="' + i + '"' + (i === 0 ? ' checked' : '') + ' style="margin-top:3px;">' +
+        '<input type="radio" name="' + pickName + '" value="' + i + '"' + (i === 0 ? ' checked' : '') + ' style="margin-top:3px;">' +
         '<div><div class="addr-candidate-main">' + escapeHtml(c.label || formatAddressLine(c)) + '</div>' +
         '<div class="addr-candidate-meta">Score ' + Math.round(c.score) +
         (warn ? ' · too low to accept / muy baja' : (low ? ' · review recommended / revise' : ' · OK')) +
@@ -984,21 +1076,22 @@ function presentAddressVerification(candidates, opts) {
     });
   }
   if (panel) panel.classList.add('show');
-  setAddressVerifyStatus('Select match → Accept / Elija → Aceptar');
+  setAddressVerifyStatus('Select match → Accept / Elija → Aceptar', g);
 }
 
 function acceptAddressVerification() {
   if (!pendingAddressVerify) return;
   var parts = pendingAddressVerify.candidates[pendingAddressVerify.selectedIndex];
   var opts = pendingAddressVerify.opts || {};
+  var g = resolveAddrGroup(pendingAddressVerify.groupKey || 'client');
   if (!parts || parts.score < ADDR_SCORE_WARN) {
     showToast('Score too low — pick another / Puntuación muy baja');
     return;
   }
-  applyGeocodedAddress(parts, !!opts.alsoAccidentState);
-  setClientAddressVerified(parts);
-  var panel = document.getElementById('addr-confirm-panel');
-  if (panel) panel.classList.remove('show');
+  var alsoAcc = !!opts.alsoAccidentState || (g && g.alsoAccident);
+  applyGeocodedToGroup(g, parts, alsoAcc);
+  setAddressVerifiedForGroup(g, parts);
+  hideAddrPanelForGroup(g);
   showToast('Address applied / Dirección aplicada');
   var onAccept = opts.onAccept;
   pendingAddressVerify = null;
@@ -1007,47 +1100,53 @@ function acceptAddressVerification() {
 
 function dismissAddressVerification() {
   var opts = pendingAddressVerify ? pendingAddressVerify.opts : null;
-  var panel = document.getElementById('addr-confirm-panel');
-  if (panel) panel.classList.remove('show');
+  var g = pendingAddressVerify ? resolveAddrGroup(pendingAddressVerify.groupKey || 'client') : null;
+  hideAddrPanelForGroup(g);
   pendingAddressVerify = null;
-  setAddressVerifyStatus('Kept your entry / Se mantuvo su texto');
+  setAddressVerifyStatus('Kept your entry / Se mantuvo su texto', g);
   if (opts && opts.onDismiss) opts.onDismiss();
 }
 
-function fixAddressWithGPS() {
-  var query = buildAddressQuery();
+function fixAddressWithGPSFor(groupKey) {
+  var g = resolveAddrGroup(groupKey);
+  if (!g) return;
+  var query = buildAddressQueryForGroup(g);
   if (!query || query.length < 5) {
     showToast('Enter an address first / Escriba una dirección');
-    setAddressVerifyStatus('Need street or full address / Falta dirección');
+    setAddressVerifyStatus('Need street or full address / Falta dirección', g);
     return;
   }
-  setAddressVerifyStatus('Looking up ArcGIS… / Buscando…');
+  setAddressVerifyStatus('Looking up ArcGIS… / Buscando…', g);
   showToast('Verifying… / Verificando…');
   geocodeAddressCandidates(query, 3).then(function(cands) {
-    presentAddressVerification(cands, { source: 'gps', alsoAccidentState: true });
+    presentAddressVerification(cands, { source: 'gps', groupKey: groupKey, alsoAccidentState: g.alsoAccident });
   });
 }
 
-function maybeAutoVerifyClientAddress() {
-  var street = v('address');
-  if (street.length < 5) return;
-  if (v('city') && v('state') && v('zip')) return;
-  var panel = document.getElementById('addr-confirm-panel');
+function fixAddressWithGPS() { fixAddressWithGPSFor('client'); }
+
+function maybeAutoVerifyForGroup(g) {
+  if (!g || g.mode === 'single') return;
+  if (v(g.street).length < 5) return;
+  if (g.city && v(g.city) && g.state && v(g.state) && g.zip && v(g.zip)) return;
+  var panel = document.getElementById(g.panel);
   if (panel && panel.classList.contains('show')) return;
-  var query = buildAddressQuery();
+  var query = buildAddressQueryForGroup(g);
   if (!query || query.length < 5) return;
   geocodeAddressCandidates(query, 2).then(function(cands) {
-    if (cands.length) presentAddressVerification(cands, { source: 'auto', alsoAccidentState: false });
+    if (cands.length) presentAddressVerification(cands, { source: 'auto', groupKey: g.key, alsoAccidentState: false });
   });
 }
 
-function setupClientAddressArcGIS() {
-  var input = document.getElementById('address');
-  var box = document.getElementById('addr-suggest');
-  if (!input || !box) return;
+function setupArcGISAddressGroup(g) {
+  if (!g) return;
+  var input = document.getElementById(g.street);
+  var box = document.getElementById(g.suggest);
+  if (!input || !box || input.dataset.arcgisBound === '1') return;
+  input.dataset.arcgisBound = '1';
   var timer;
   input.addEventListener('input', function() {
-    markClientAddressStale();
+    markAddressStale(g.key);
     var val = this.value.trim();
     clearTimeout(timer);
     if (val.length < 3) { box.classList.remove('show'); return; }
@@ -1063,9 +1162,9 @@ function setupClientAddressArcGIS() {
             box.innerHTML = '<div class="addr-loading">No results / Sin resultados</div>';
             return;
           }
-          addrCache['addr-suggest'] = sugs;
+          addrCache[g.suggest] = sugs;
           box.innerHTML = sugs.map(function(s, i) {
-            return '<div class="addr-item" data-idx="' + i + '" data-group="addr-suggest">' +
+            return '<div class="addr-item" data-idx="' + i + '" data-group="' + g.suggest + '">' +
               '<div class="addr-main">' + escapeHtml(s.text || '') + '</div>' +
               '<div class="addr-sec">ArcGIS · confirm on pick / confirmar al elegir</div></div>';
           }).join('');
@@ -1073,12 +1172,12 @@ function setupClientAddressArcGIS() {
             item.addEventListener('mousedown', function(e) {
               e.preventDefault();
               var idx = parseInt(item.getAttribute('data-idx'), 10);
-              var s = addrCache['addr-suggest'][idx];
+              var s = addrCache[g.suggest][idx];
               if (!s) return;
               box.classList.remove('show');
-              setAddressVerifyStatus('Resolving… / Resolviendo…');
+              setAddressVerifyStatus('Resolving… / Resolviendo…', g);
               arcgisResolveSuggestion(s.magicKey, s.text).then(function(cands) {
-                presentAddressVerification(cands, { source: 'suggest', alsoAccidentState: false });
+                presentAddressVerification(cands, { source: 'suggest', groupKey: g.key, alsoAccidentState: g.alsoAccident });
               });
             });
           });
@@ -1090,70 +1189,22 @@ function setupClientAddressArcGIS() {
   });
   input.addEventListener('blur', function() {
     setTimeout(function() { box.classList.remove('show'); }, 150);
-    clearTimeout(clientAddrAutoBlurTimer);
-    clientAddrAutoBlurTimer = setTimeout(maybeAutoVerifyClientAddress, 500);
+    clearTimeout(addrBlurTimers[g.key]);
+    addrBlurTimers[g.key] = setTimeout(function() { maybeAutoVerifyForGroup(g); }, 500);
   });
+  if (g.mode === 'full') {
+    [g.city, g.state, g.zip].forEach(function(fid) {
+      if (!fid) return;
+      var el = document.getElementById(fid);
+      if (el && el.dataset.addrStaleBound !== '1') {
+        el.dataset.addrStaleBound = '1';
+        el.addEventListener('input', function() { markAddressStale(g.key); });
+      }
+    });
+  }
 }
 
-['city', 'state', 'zip'].forEach(function(id) {
-  var el = document.getElementById(id);
-  if (el) el.addEventListener('input', markClientAddressStale);
-});
-
-function setupAddress(inputId, suggestId, cityId, stateId, zipId) {
-  const input = document.getElementById(inputId);
-  const box = document.getElementById(suggestId);
-  let timer;
-
-  input.addEventListener('input', function() {
-    const val = this.value.trim();
-    clearTimeout(timer);
-    if (val.length < 3) { box.classList.remove('show'); return; }
-    box.innerHTML = '<div class="addr-loading">Searching... / Buscando...</div>';
-    box.classList.add('show');
-    timer = setTimeout(() => {
-      const url = 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&countrycodes=us&limit=8&featuretype=&q=' + encodeURIComponent(val);
-      fetch(url)
-        .then(r => r.json())
-        .then(data => {
-          if (!data || !data.length) { box.innerHTML = '<div class="addr-loading">No results / Sin resultados</div>'; return; }
-          addrCache[suggestId] = [];
-          box.innerHTML = data.map((d, i) => {
-            const a = d.address || {};
-            const parts = nominatimToParts(a, d.display_name);
-            const main = parts.address || d.display_name.split(',')[0];
-            const sec = [parts.city, parts.state, parts.zip].filter(Boolean).join(', ');
-            addrCache[suggestId][i] = parts;
-            return `<div class="addr-item" data-idx="${i}" data-group="${suggestId}">
-              <div class="addr-main">${main}</div>
-              ${sec ? `<div class="addr-sec">${sec}</div>` : ''}
-            </div>`;
-          }).join('');
-
-          box.querySelectorAll('.addr-item').forEach(item => {
-            item.addEventListener('mousedown', function(e) {
-              e.preventDefault();
-              const idx = parseInt(this.getAttribute('data-idx'));
-              const group = this.getAttribute('data-group');
-              const r = addrCache[group][idx];
-              if (!r) return;
-              document.getElementById(inputId).value = r.address;
-              if (cityId) document.getElementById(cityId).value = r.city;
-              if (stateId) document.getElementById(stateId).value = r.state;
-              if (zipId) document.getElementById(zipId).value = r.zip;
-              box.classList.remove('show');
-              onFormSync();
-            });
-          });
-        })
-        .catch(() => { box.innerHTML = '<div class="addr-loading">Could not load. Check connection.</div>'; });
-    }, 450);
-  });
-
-  input.addEventListener('blur', () => setTimeout(() => box.classList.remove('show'), 150));
-}
-
-setupClientAddressArcGIS();
+setupArcGISAddressGroup(resolveAddrGroup('client'));
 
 // Helpers
 function v(id) { const el = document.getElementById(id); return el ? (el.value||'').trim() : ''; }
@@ -1218,6 +1269,9 @@ function jumpToSection(id) {
   if (!el) return;
   el.classList.remove('collapsed');
   el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.querySelectorAll('.nav-pill[data-section]').forEach(function(p) {
+    p.classList.toggle('active-step', p.getAttribute('data-section') === id);
+  });
 }
 
 function setAllSections(collapsed) {
@@ -1579,11 +1633,24 @@ function renderCompanions() {
         <div class="field"><label>Phone <span class="es">/ Teléfono</span></label><input type="tel" id="c${id}_tel" placeholder="+1 (305) 000-0000"></div>
         <div class="field"><label>Email <span class="es">/ Correo electrónico</span></label><input type="email" id="c${id}_email" placeholder="example@email.com"></div>
       </div>
-      <div class="field gap-top">
-        <label>Address <span class="es">/ Dirección</span></label>
+      <div class="field gap-top" id="c${id}-f-address-block">
+        <label>Address <span class="es">/ Dirección</span><span id="c${id}-addr-verify-badge" class="addr-verify-badge" hidden aria-live="polite"></span></label>
         <div class="address-wrap">
-          <input type="text" id="c${id}_address" placeholder="Start typing address..." autocomplete="off">
+          <input type="text" id="c${id}_address" placeholder="Type address — US lookup / Escriba dirección" autocomplete="off">
           <div class="address-suggestions" id="c${id}_addr-suggest"></div>
+        </div>
+        <div class="addr-verify-row">
+          <button type="button" class="btn btn-icon" onclick="fixAddressWithGPSFor('c${id}')">📍 Verify address (GPS)</button>
+          <span class="addr-verify-status" id="c${id}-addr-verify-status">ArcGIS / Misma verificación</span>
+        </div>
+        <div class="addr-confirm-panel" id="c${id}-addr-confirm-panel" role="region">
+          <div class="addr-confirm-title">Confirm address / Confirmar dirección</div>
+          <p class="addr-confirm-hint" id="c${id}-addr-confirm-hint"></p>
+          <div id="c${id}-addr-confirm-candidates"></div>
+          <div class="addr-confirm-actions">
+            <button type="button" class="btn btn-primary" onclick="acceptAddressVerification()">Accept / Aceptar</button>
+            <button type="button" class="btn" onclick="dismissAddressVerification()">Keep current / Mantener</button>
+          </div>
         </div>
       </div>
       <div class="grid-3 gap-top">
@@ -1650,59 +1717,8 @@ function renderCompanions() {
   });
 
   // Setup address autocomplete for each companion
-  companions.forEach(id => {
-    setupAddress('c'+id+'_address','c'+id+'_addr-suggest','c'+id+'_city','c'+id+'_state','c'+id+'_zip');
-  });
+  companions.forEach(function(id) { setupArcGISAddressGroup(resolveAddrGroup('c' + id)); });
   if (typeof updateProgress === 'function') updateProgress();
-}
-
-// ============================================================
-// SIMPLE ADDRESS AUTOCOMPLETE (for car location — no city/state/zip fill)
-// ============================================================
-function setupAddressSimple(inputId, suggestId) {
-  const input = document.getElementById(inputId);
-  const box   = document.getElementById(suggestId);
-  if (!input || !box) return;
-  let timer;
-  input.addEventListener('input', function() {
-    const val = this.value.trim();
-    clearTimeout(timer);
-    if (val.length < 3) { box.classList.remove('show'); return; }
-    box.innerHTML = '<div class="addr-loading">Searching... / Buscando...</div>';
-    box.classList.add('show');
-    timer = setTimeout(() => {
-      const url = 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&countrycodes=us&limit=6&q=' + encodeURIComponent(val);
-      fetch(url)
-        .then(r => r.json())
-        .then(data => {
-          if (!data || !data.length) { box.innerHTML = '<div class="addr-loading">No results / Sin resultados</div>'; return; }
-          box.innerHTML = data.map(d => {
-            const a = d.address || {};
-            const street = [a.house_number, a.road || a.pedestrian || a.path || a.neighbourhood].filter(Boolean).join(' ');
-            const city   = a.city || a.town || a.village || a.suburb || a.county || '';
-            const stRaw  = (a.state || '').trim();
-            const state  = STATE_MAP[stRaw] || (stRaw.length <= 2 ? stRaw.toUpperCase() : stRaw);
-            const zip    = a.postcode || '';
-            const main   = street || d.display_name.split(',')[0];
-            const sec    = [city, state, zip].filter(Boolean).join(', ');
-            const full   = [main, sec].filter(Boolean).join(', ');
-            return `<div class="addr-item" data-full="${full.replace(/"/g,'&quot;')}">
-              <div class="addr-main">${main}</div>
-              ${sec ? `<div class="addr-sec">${sec}</div>` : ''}
-            </div>`;
-          }).join('');
-          box.querySelectorAll('.addr-item').forEach(item => {
-            item.addEventListener('mousedown', function(e) {
-              e.preventDefault();
-              document.getElementById(inputId).value = this.getAttribute('data-full');
-              box.classList.remove('show');
-            });
-          });
-        })
-        .catch(() => { box.innerHTML = '<div class="addr-loading">Could not load. Check connection.</div>'; });
-    }, 450);
-  });
-  input.addEventListener('blur', () => setTimeout(() => box.classList.remove('show'), 150));
 }
 
 // ============================================================
@@ -2199,6 +2215,7 @@ function applyLeadPaste() {
       }
       presentAddressVerification(cands, {
         source: 'lead',
+        groupKey: 'client',
         alsoAccidentState: !p.accident_state,
         onAccept: function(parts) {
           finishApply('Address confirmed: ' + formatAddressLine(parts));
