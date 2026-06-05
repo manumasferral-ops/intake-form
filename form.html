@@ -261,6 +261,17 @@
   .addr-confirm-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
   .addr-confirm-actions .btn { padding: 7px 14px; font-size: 13px; }
   .field.addr-stale input { border-color: #e8a87a !important; }
+  .req-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; align-items: center; }
+  .req-chip { font-size: 11px; font-weight: 500; padding: 5px 11px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.12s; }
+  .req-chip:hover { border-color: var(--accent-border); color: var(--accent); }
+  .req-chip.done { background: #e6f4ec; border-color: #b8e0c8; color: var(--success); }
+  .req-chip.missing { background: #fff8e6; border-color: #e8c96a; color: #7a5a00; }
+  .nav-pill.sec-done { border-color: #b8e0c8; color: var(--success); background: #f0faf4; }
+  html[data-theme="dark"] .nav-pill.sec-done { background: #1a3328; border-color: #2d5a42; }
+  html[data-theme="dark"] .req-chip.done { background: #1a3328; border-color: #2d5a42; color: #7dcea0; }
+  .source-quick { margin-top: 8px; }
+  .injury-filter { margin-bottom: 8px; font-size: 13px; }
+  .body-zone.bz-hidden, .bz-col-hdr.bz-hidden { display: none !important; }
   @media (max-width: 600px) {
     .nav-pills { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
     .toolbar-actions { justify-content: flex-start; }
@@ -283,7 +294,7 @@
     <div>
       <div class="header-title">Auto Accident Intake Form</div>
       <div class="header-sub">Personal Injury · Accidente de Auto</div>
-      <span class="form-version">ArcGIS all addresses · reload with ⌘⇧R</span>
+      <span class="form-version">Intake v2 · Jun 2026</span>
     </div>
     <div class="header-date">
       <div id="hdate"></div>
@@ -296,11 +307,21 @@
     <input type="text" id="firm" placeholder="Enter law firm name / Nombre de la firma...">
   </div>
 
-  <div class="firm-bar">
-    <label>Source / Fuente <span class="required">*</span></label>
-    <div id="f-source" style="flex:1;display:flex;align-items:center;gap:8px;">
-      <input type="text" id="source" placeholder="Source abbreviation / Abreviatura de fuente" style="flex:1;" aria-required="true" aria-describedby="err-source" aria-invalid="false">
-      <span class="err-msg" id="err-source" role="alert">Required / Requerido</span>
+  <div class="firm-bar" style="flex-direction:column;align-items:stretch;">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;width:100%;">
+      <label>Source / Fuente <span class="required">*</span></label>
+      <div id="f-source" style="flex:1;display:flex;align-items:center;gap:8px;min-width:200px;">
+        <input type="text" id="source" placeholder="Source abbreviation / Abreviatura de fuente" style="flex:1;" aria-required="true" aria-describedby="err-source" aria-invalid="false">
+        <span class="err-msg" id="err-source" role="alert">Required / Requerido</span>
+      </div>
+    </div>
+    <div class="toggle-group source-quick" id="source-quick-tg" aria-label="Common sources">
+      <div class="tog" onclick="setSourceQuick(this)" data-src="AV">AV</div>
+      <div class="tog" onclick="setSourceQuick(this)" data-src="Zen">Zen</div>
+      <div class="tog" onclick="setSourceQuick(this)" data-src="SMS">SMS</div>
+      <div class="tog" onclick="setSourceQuick(this)" data-src="Web">Web</div>
+      <div class="tog" onclick="setSourceQuick(this)" data-src="Referral">Referral / Referido</div>
+      <div class="tog" onclick="setSourceQuick(this)" data-src="Walk-in">Walk-in</div>
     </div>
   </div>
 
@@ -325,6 +346,7 @@
     <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-labelledby="prog-label" id="prog-bar-wrap">
       <div class="progress-fill" id="prog-fill"></div>
     </div>
+    <div class="req-chips" id="req-chips" aria-label="Required fields"></div>
     <div class="nav-pills" style="margin-top:10px;">
       <button type="button" class="nav-pill" data-section="sec-client" onclick="jumpToSection('sec-client')">Client</button>
       <button type="button" class="nav-pill" data-section="sec-case" onclick="jumpToSection('sec-case')">Case</button>
@@ -463,10 +485,13 @@
       <div class="grid-3 gap-top">
         <div class="field">
           <label>State of accident <span class="es">/ Estado del accidente</span></label>
-          <select id="accident_state">
+          <div class="dol-quick">
+          <select id="accident_state" style="flex:1;">
             <option value="">— Select state —</option>
-            <option>Alabama (AL)</option><option>Alaska (AK)</option><option>Arizona (AZ)</option><option>Arkansas (AR)</option><option>California (CA)</option><option>Colorado (CO)</option><option>Connecticut (CT)</option><option>Delaware (DE)</option><option>Florida (FL)</option><option>Georgia (GA)</option><option>Hawaii (HI)</option><option>Idaho (ID)</option><option>Illinois (IL)</option><option>Indiana (IN)</option><option>Iowa (IA)</option><option>Kansas (KS)</option><option>Kentucky (KY)</option><option>Louisiana (LA)</option><option>Maine (ME)</option><option>Maryland (MD)</option><option>Massachusetts (MA)</option><option>Michigan (MI)</option><option>Minnesota (MN)</option><option>Mississippi (MS)</option><option>Missouri (MO)</option><option>Montana (MT)</option><option>Nebraska (NE)</option><option>Nevada (NV)</option><option>New Hampshire (NH)</option><option>New Jersey (NJ)</option><option>New Mexico (NM)</option><option>New York (NY)</option><option>North Carolina (NC)</option><option>North Dakota (ND)</option><option>Ohio (OH)</option><option>Oklahoma (OK)</option><option>Oregon (OR)</option><option>Pennsylvania (PA)</option><option>Rhode Island (RI)</option><option>South Carolina (SC)</option><option>South Dakota (SD)</option><option>Tennessee (TN)</option><option>Texas (TX)</option><option>Utah (UT)</option><option>Vermont (VT)</option><option>Virginia (VA)</option><option>Washington (WA)</option><option>West Virginia (WV)</option><option>Wisconsin (WI)</option><option>Wyoming (WY)</option>
+            <option>Alabama (AL)</option><option>Alaska (AK)</option><option>Arizona (AZ)</option><option>Arkansas (AR)</option><option>California (CA)</option><option>Colorado (CO)</option><option>Connecticut (CT)</option><option>Delaware (DE)</option><option>Florida (FL)</option><option>Georgia (GA)</option><option>Hawaii (HI)</option><option>Idaho (ID)</option><option>Illinois (IL)</option><option>Indiana (IN)</option><option>Iowa (IA)</option><option>Kansas (KS)</option><option>Kentucky (KY)</option><option>Louisiana (LA)</option><option>Maine (ME)</option><option>Maryland (MD)</option><option>Massachusetts (MA)</option><option>Michigan (MI)</option><option>Minnesota (MN)</option><option>Mississippi (MS)</option><option>Missouri (MO)</option><option>Montana (MT)</option><option>Nebraska (NE)</option><option>Nevada (NV)</option><option>New Hampshire (NH)</option><option>New Jersey (NJ)</option><option>New Mexico (NM)</option><option>New York (NY)</option><option>North Carolina (NC)</option><option>North Dakota (ND)</option><option>Ohio (OH)</option><option>Oklahoma (OK)</option><option>Oregon (OR)</option><option>Pennsylvania (PA)</option><option>Rhode Island (RI)</option><option>South Carolina (SC)</option><option>South Dakota (SD)</option><option>Tennessee (TN)</option><option>Texas (TX)</option><option>Utah (UT)</option><option>Vermont (VT)</option><option>Virginia (VA)</option><option>Washington (WA)</option><option>West Virginia (WV)</option><option>Wisconsin (WI)</option>            <option>Wyoming (WY)</option>
           </select>
+          <button type="button" class="btn btn-icon" onclick="copyClientStateToAccident()" title="Use client address state">= Client</button>
+          </div>
         </div>
         <div class="field">
           <label>Fault <span class="es">/ Responsabilidad</span></label>
@@ -579,6 +604,7 @@
       </div>
       <div class="field gap-top">
         <label>Injuries — select affected body areas <span class="es">/ Lesiones — áreas afectadas</span></label>
+        <input type="text" class="injury-filter" id="injury-filter" placeholder="Filter injuries… neck, back, knee / Filtrar: cuello, espalda…" oninput="filterInjuryZones(this.value)">
         <div class="body-zones" id="body-zones">
           <div class="bz-col-hdr">← Left / Izq.</div>
           <div class="bz-col-hdr" style="justify-content:flex-end;">Right / Der. →</div>
@@ -1262,6 +1288,33 @@ function updateProgress() {
     var reqOk = v('source') && v('name') && v('tel') && v('dol');
     label.textContent = pct + '% · ' + (reqOk ? 'Required fields OK / Listo' : 'Need source, name, phone, DOL / Faltan datos');
   }
+  renderReqChips();
+}
+
+var REQ_CHIP_LABELS = { source: 'Source', name: 'Name', tel: 'Phone', dol: 'DOL' };
+
+function renderReqChips() {
+  var box = document.getElementById('req-chips');
+  if (!box) return;
+  box.innerHTML = REQUIRED_FIELDS.map(function(r) {
+    var done = !!v(r.input);
+    var lbl = REQ_CHIP_LABELS[r.input] || r.input;
+    return '<button type="button" class="req-chip ' + (done ? 'done' : 'missing') + '" onclick="jumpToRequired(\'' + r.input + '\')">' + lbl + (done ? ' ✓' : '') + '</button>';
+  }).join('');
+}
+
+function jumpToRequired(inputId) {
+  for (var i = 0; i < REQUIRED_FIELDS.length; i++) {
+    var r = REQUIRED_FIELDS[i];
+    if (r.input !== inputId) continue;
+    if (r.sec) jumpToSection(r.sec);
+    var wrap = document.getElementById(r.field);
+    if (wrap) wrap.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    var inp = document.getElementById(r.input);
+    if (inp) setTimeout(function(el) { el.focus(); }, 400, inp);
+    if (!v(r.input)) setFieldValidation(r.field, r.input, true);
+    return;
+  }
 }
 
 function jumpToSection(id) {
@@ -1917,6 +1970,54 @@ function setDolToday() {
   showToast('DOL set to today / Fecha = hoy');
 }
 
+function setSourceQuick(el) {
+  var src = el.getAttribute('data-src') || el.textContent.trim();
+  var inp = document.getElementById('source');
+  if (inp) inp.value = src;
+  document.querySelectorAll('#source-quick-tg .tog').forEach(function(t) {
+    t.classList.toggle('active', t === el);
+  });
+  setFieldValidation('f-source', 'source', false);
+  onFormSync();
+  showToast('Source / Fuente: ' + src);
+}
+
+function copyClientStateToAccident() {
+  var st = v('state');
+  if (!st) {
+    showToast('Set client state first / Ponga estado del cliente');
+    return;
+  }
+  var opt = accidentStateOption(st);
+  if (opt) {
+    document.getElementById('accident_state').value = opt;
+    onFormSync();
+    showToast('Accident state = client / Estado = cliente');
+  } else {
+    showToast('Could not match state / No coincide');
+  }
+}
+
+function filterInjuryZones(q) {
+  q = (q || '').trim().toLowerCase();
+  document.querySelectorAll('#body-zones .body-zone').forEach(function(z) {
+    var text = (z.textContent || '').toLowerCase();
+    z.classList.toggle('bz-hidden', !!(q && text.indexOf(q) < 0));
+  });
+  document.querySelectorAll('#body-zones .bz-col-hdr').forEach(function(h) {
+    h.classList.toggle('bz-hidden', !!q);
+  });
+}
+
+function updateNavPills() {
+  document.querySelectorAll('.nav-pill[data-section]').forEach(function(p) {
+    var sec = p.getAttribute('data-section');
+    var dotId = SEC_DOT_IDS[sec];
+    var dot = dotId ? document.getElementById(dotId) : null;
+    p.classList.toggle('sec-done', !!(dot && dot.classList.contains('filled')));
+  });
+}
+
 function accidentStateOption(abbrOrName) {
   if (!abbrOrName) return '';
   var raw = String(abbrOrName).trim();
@@ -2202,6 +2303,8 @@ function applyLeadPaste() {
     if (geoNote) msg += ' · ' + geoNote;
     if (hint) hint.textContent = msg;
     showToast('Lead applied / Lead aplicado');
+    var lp = document.getElementById('lead-paste');
+    if (lp) lp.classList.remove('open');
     jumpToFirstMissing();
   }
 
@@ -2259,7 +2362,11 @@ function buildSummaryText() {
   lines.push('Name: ' + (v('name') || '(missing)') + ' | DOB: ' + formatDate(v('dob')));
   lines.push('Phone: ' + (v('tel') || '(missing)') + ' | Email: ' + v('email'));
   var addr = [v('address'), v('city'), v('state'), v('zip')].filter(Boolean).join(', ');
-  if (addr) lines.push('Address: ' + addr);
+  if (addr) {
+    var badge = document.getElementById('addr-verify-badge');
+    var verified = badge && !badge.hidden && badge.classList.contains('verified');
+    lines.push('Address: ' + addr + (verified ? ' [GPS verified]' : ''));
+  }
   lines.push('--- Case / Caso ---');
   lines.push('DOL: ' + formatDate(v('dol')) + ' @ ' + formatTime(v('dol_time')));
   lines.push('Accident state: ' + v('accident_state') + ' | Fault: ' + v('fault') + ' | Position: ' + v('position'));
@@ -2340,6 +2447,7 @@ function updateFillDots() {
       !!sec.querySelector('input[type=checkbox]:checked');
     dot.classList.toggle('filled', filled);
   });
+  updateNavPills();
 }
 function onFormSync() { updateFillDots(); updateProgress(); }
 document.addEventListener('input', onFormSync);
