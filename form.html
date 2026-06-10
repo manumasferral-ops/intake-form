@@ -2187,12 +2187,23 @@ setInterval(() => { if (currentDraftId) saveDraft(); }, 30000);
   } catch (e) {}
 })();
 
-// Warn before closing tab with unsaved intake data
-window.addEventListener('beforeunload', function(e) {
-  if (v('name') || v('tel') || v('source') || v('dol')) {
-    e.preventDefault();
-    e.returnValue = '';
-  }
+// Never block refresh/close: silently save work instead.
+// If a draft is active, update it; otherwise keep one rolling "Autosaved" slot.
+window.addEventListener('beforeunload', function() {
+  try {
+    if (currentDraftId) { saveDraft(); return; }
+    if (v('name') || v('tel') || v('source') || v('dol')) {
+      var drafts = getDrafts();
+      var clientName = (document.getElementById('name') && document.getElementById('name').value || '').trim();
+      drafts['draft_autosave'] = {
+        id: 'draft_autosave',
+        label: '\u27f3 Autosaved' + (clientName ? ' \u00b7 ' + clientName : ''),
+        ts: Date.now(),
+        data: collectFormData()
+      };
+      setDrafts(drafts);
+    }
+  } catch (err) {}
 });
 
 // Init on load
