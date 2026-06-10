@@ -142,7 +142,13 @@
   .body-zone span { font-size: 13px; color: var(--text); }
   .body-zone.selected span { color: var(--accent); font-weight: 500; }
 
-  .draft-bar { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 18px; margin-bottom: 1rem; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: space-between; }
+  .draft-bar { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 18px; margin-bottom: 1rem; display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; justify-content: space-between; }
+  .draft-bar-top { border-color: var(--accent-border); background: linear-gradient(135deg, var(--accent-bg) 0%, var(--surface) 55%); }
+  .draft-bar-title { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+  .draft-count { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--accent); color: #fff; }
+  .draft-count.empty { background: var(--surface2); color: var(--text3); border: 1px solid var(--border); }
+  .draft-io { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .draft-io input[type=file] { display: none; }
   .draft-status { font-size: 12px; color: var(--text3); font-family: 'DM Mono', monospace; }
   .draft-status.saved { color: var(--success, #1a7a4a); }
   .draft-list { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
@@ -294,7 +300,7 @@
     <div>
       <div class="header-title">Auto Accident Intake Form</div>
       <div class="header-sub">Personal Injury · Accidente de Auto</div>
-      <span class="form-version">Intake v2 · Jun 2026</span>
+      <span class="form-version">Intake v2.1 · Jun 2026 · lead+companions</span>
     </div>
     <div class="header-date">
       <div id="hdate"></div>
@@ -363,6 +369,28 @@
       <button type="button" class="btn" onclick="setAllSections(true)">Collapse all</button>
       <button type="button" class="btn btn-primary" onclick="copyIntakeSummary()">Copy summary</button>
       <button type="button" class="btn" onclick="emailIntakeSummary()" title="Open email draft with summary">Email summary</button>
+    </div>
+  </div>
+
+  <div class="draft-bar draft-bar-top" id="draft-bar">
+    <div style="flex:1;min-width:220px;">
+      <div class="draft-bar-title">
+        <div style="font-size:12px;font-weight:600;color:var(--text2);">Saved drafts / Borradores guardados</div>
+        <span class="draft-count empty" id="draft-count">0</span>
+      </div>
+      <input type="search" class="draft-filter" id="draft-filter" placeholder="Search drafts… / Buscar…" oninput="renderDraftList()" aria-label="Search drafts">
+      <div class="draft-list" id="draft-list"></div>
+      <div style="font-size:11px;color:var(--text3);margin-top:6px;">Saved in this browser · Use Import if you switched computers or URLs / Guardado en este navegador</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-wrap:wrap;">
+      <span class="draft-status" id="draft-status">No draft saved</span>
+      <div class="draft-io">
+        <button class="btn" onclick="saveDraft()" style="padding:6px 14px;font-size:13px;">Save draft / Guardar</button>
+        <button class="btn" onclick="newDraft()" style="padding:6px 14px;font-size:13px;">New / Nuevo</button>
+        <button class="btn" onclick="exportDrafts()" style="padding:6px 14px;font-size:13px;" title="Download backup JSON">Export</button>
+        <button class="btn" onclick="document.getElementById('draft-import-file').click()" style="padding:6px 14px;font-size:13px;" title="Restore from backup JSON">Import</button>
+        <input type="file" id="draft-import-file" accept="application/json,.json" onchange="importDraftsFile(this)">
+      </div>
     </div>
   </div>
 
@@ -716,19 +744,6 @@
 
 
 
-  <div class="draft-bar">
-    <div>
-      <div style="font-size:12px;font-weight:500;color:var(--text2);margin-bottom:4px;">Saved drafts / Borradores guardados</div>
-      <input type="search" class="draft-filter" id="draft-filter" placeholder="Search drafts… / Buscar…" oninput="renderDraftList()" style="display:none;" aria-label="Search drafts">
-      <div class="draft-list" id="draft-list"></div>
-    </div>
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-      <span class="draft-status" id="draft-status">No draft saved</span>
-      <button class="btn" onclick="saveDraft()" style="padding:6px 14px;font-size:13px;">Save draft / Guardar borrador</button>
-      <button class="btn" onclick="newDraft()" style="padding:6px 14px;font-size:13px;">New / Nuevo</button>
-    </div>
-  </div>
-
   <div class="btn-row">
     <button class="btn btn-primary" onclick="generatePDF()">Export PDF / Exportar PDF</button>
     <button class="btn" onclick="clearForm()">Clear / Limpiar</button>
@@ -755,7 +770,7 @@
 <!-- Floating action bar -->
 <div class="float-bar">
   <span class="float-status" id="float-draft-status"></span>
-  <button type="button" class="btn" onclick="var t=document.getElementById('intake-toolbar');if(t)t.scrollIntoView({behavior:'smooth',block:'start'});" title="Scroll back to progress &amp; section tools / Volver a herramientas" style="padding:7px 12px;font-size:13px;">↑ Tools / Herramientas</button>
+  <button type="button" class="btn" onclick="var t=document.getElementById('draft-bar')||document.getElementById('intake-toolbar');if(t)t.scrollIntoView({behavior:'smooth',block:'start'});" title="Scroll to drafts &amp; tools / Borradores y herramientas" style="padding:7px 12px;font-size:13px;">↑ Drafts / Borradores</button>
   <button class="btn" onclick="saveDraft()" title="Save draft (Cmd+S / Ctrl+S)" style="padding:7px 16px;font-size:13px;">💾 Save draft</button>
   <button class="btn btn-primary" onclick="generatePDF()" style="padding:7px 16px;font-size:13px;">⬇ Export PDF</button>
 </div>
@@ -790,6 +805,18 @@ function tog(el, groupId) {
 // Vehicle management — uses an array to track active vehicles so IDs stay accurate
 let vehicles = [];
 let vCounter = 0;
+
+// State map + required fields — must exist before addVehicle()/renderVehicles() → updateProgress()
+const STATE_MAP = {'Alabama':'AL','Alaska':'AK','Arizona':'AZ','Arkansas':'AR','California':'CA','Colorado':'CO','Connecticut':'CT','Delaware':'DE','Florida':'FL','Georgia':'GA','Hawaii':'HI','Idaho':'ID','Illinois':'IL','Indiana':'IN','Iowa':'IA','Kansas':'KS','Kentucky':'KY','Louisiana':'LA','Maine':'ME','Maryland':'MD','Massachusetts':'MA','Michigan':'MI','Minnesota':'MN','Mississippi':'MS','Missouri':'MO','Montana':'MT','Nebraska':'NE','Nevada':'NV','New Hampshire':'NH','New Jersey':'NJ','New Mexico':'NM','New York':'NY','North Carolina':'NC','North Dakota':'ND','Ohio':'OH','Oklahoma':'OK','Oregon':'OR','Pennsylvania':'PA','Rhode Island':'RI','South Carolina':'SC','South Dakota':'SD','Tennessee':'TN','Texas':'TX','Utah':'UT','Vermont':'VT','Virginia':'VA','Washington':'WA','West Virginia':'WV','Wisconsin':'WI','Wyoming':'WY','District of Columbia':'DC'};
+var REQUIRED_FIELDS = [
+  { field: 'f-source', input: 'source', sec: null },
+  { field: 'f-name',   input: 'name',   sec: 'sec-client' },
+  { field: 'f-tel',    input: 'tel',    sec: 'sec-client' },
+  { field: 'f-dol',    input: 'dol',    sec: 'sec-case' },
+];
+var SECTION_ORDER = ['sec-client', 'sec-case', 'sec-companion', 'sec-medical', 'sec-vehicles', 'sec-notes'];
+var SEC_DOT_IDS = { 'sec-client': 'sec-dot-client', 'sec-case': 'sec-dot-case', 'sec-companion': 'sec-dot-companion', 'sec-medical': 'sec-dot-medical', 'sec-vehicles': 'sec-dot-vehicles', 'sec-notes': 'sec-dot-notes' };
+var REQ_CHIP_LABELS = { source: 'Source', name: 'Name', tel: 'Phone', dol: 'DOL' };
 
 function addVehicle() {
   vCounter++;
@@ -886,7 +913,6 @@ addVehicle(); addVehicle();
 
 // Address autocomplete — safe version using JS object cache
 const addrCache = {};
-const STATE_MAP = {'Alabama':'AL','Alaska':'AK','Arizona':'AZ','Arkansas':'AR','California':'CA','Colorado':'CO','Connecticut':'CT','Delaware':'DE','Florida':'FL','Georgia':'GA','Hawaii':'HI','Idaho':'ID','Illinois':'IL','Indiana':'IN','Iowa':'IA','Kansas':'KS','Kentucky':'KY','Louisiana':'LA','Maine':'ME','Maryland':'MD','Massachusetts':'MA','Michigan':'MI','Minnesota':'MN','Mississippi':'MS','Missouri':'MO','Montana':'MT','Nebraska':'NE','Nevada':'NV','New Hampshire':'NH','New Jersey':'NJ','New Mexico':'NM','New York':'NY','North Carolina':'NC','North Dakota':'ND','Ohio':'OH','Oklahoma':'OK','Oregon':'OR','Pennsylvania':'PA','Rhode Island':'RI','South Carolina':'SC','South Dakota':'SD','Tennessee':'TN','Texas':'TX','Utah':'UT','Vermont':'VT','Virginia':'VA','Washington':'WA','West Virginia':'WV','Wisconsin':'WI','Wyoming':'WY','District of Columbia':'DC'};
 
 var ADDR_SCORE_HIGH = 75;
 var ADDR_SCORE_WARN = 60;
@@ -1291,11 +1317,9 @@ function updateProgress() {
   renderReqChips();
 }
 
-var REQ_CHIP_LABELS = { source: 'Source', name: 'Name', tel: 'Phone', dol: 'DOL' };
-
 function renderReqChips() {
   var box = document.getElementById('req-chips');
-  if (!box) return;
+  if (!box || !REQUIRED_FIELDS || !REQUIRED_FIELDS.length || !REQ_CHIP_LABELS) return;
   box.innerHTML = REQUIRED_FIELDS.map(function(r) {
     var done = !!v(r.input);
     var lbl = REQ_CHIP_LABELS[r.input] || r.input;
@@ -1358,14 +1382,6 @@ function formatTime(t) {
   const h12 = h % 12 || 12;
   return `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
 }
-
-// Required field validation
-var REQUIRED_FIELDS = [
-  { field: 'f-source', input: 'source', sec: null },
-  { field: 'f-name',   input: 'name',   sec: 'sec-client' },
-  { field: 'f-tel',    input: 'tel',    sec: 'sec-client' },
-  { field: 'f-dol',    input: 'dol',    sec: 'sec-case' },
-];
 
 function setFieldValidation(fieldWrapId, inputId, invalid) {
   var wrap = document.getElementById(fieldWrapId);
@@ -1682,7 +1698,7 @@ function renderCompanions() {
       </div>
       <div class="grid-2">
         <div class="field"><label>Full name <span class="es">/ Nombre completo</span></label><input type="text" id="c${id}_name" placeholder="First Last"></div>
-        <div class="field"><label>Date of birth <span class="es">/ Fecha de nacimiento</span></label><input type="date" id="c${id}_dob"></div>
+        <div class="field"><label>Date of birth <span class="es">/ Fecha de nacimiento</span></label><input type="date" id="c${id}_dob" onchange="updateCompanionAge(${id})"><span class="age-badge" id="c${id}_dob-age" style="display:none;"></span></div>
         <div class="field"><label>Phone <span class="es">/ Teléfono</span></label><input type="tel" id="c${id}_tel" placeholder="+1 (305) 000-0000"></div>
         <div class="field"><label>Email <span class="es">/ Correo electrónico</span></label><input type="email" id="c${id}_email" placeholder="example@email.com"></div>
       </div>
@@ -1771,20 +1787,50 @@ function renderCompanions() {
 
   // Setup address autocomplete for each companion
   companions.forEach(function(id) { setupArcGISAddressGroup(resolveAddrGroup('c' + id)); });
+  companions.forEach(function(id) { updateCompanionAge(id); });
   if (typeof updateProgress === 'function') updateProgress();
 }
 
 // ============================================================
 // DRAFT SAVE / RESTORE SYSTEM
 // (moved from head — was broken inside <script src> tag)
+// AGENTS: Never change DRAFT_KEY or wipe intake_drafts — see .cursor/INTAKE-IMPROVEMENTS.md
 // ============================================================
 const DRAFT_KEY = 'intake_drafts';
+const LEGACY_DRAFT_KEYS = []; // add old keys here with migrateDraftStorage() if key ever changes
 let currentDraftId = null;
 
 function getDrafts() {
   try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || '{}'); } catch(e) { return {}; }
 }
-function setDrafts(d) { localStorage.setItem(DRAFT_KEY, JSON.stringify(d)); }
+
+function setDrafts(d) {
+  if (!d || typeof d !== 'object' || Array.isArray(d)) return;
+  var prev = getDrafts();
+  var prevN = Object.keys(prev).length;
+  var nextN = Object.keys(d).length;
+  if (prevN > 0 && nextN === 0 && !window._draftsAllowClear) {
+    console.warn('[intake] Blocked accidental draft wipe (' + prevN + ' drafts preserved)');
+    return;
+  }
+  localStorage.setItem(DRAFT_KEY, JSON.stringify(d));
+}
+
+function migrateDraftStorage() {
+  var merged = getDrafts();
+  var changed = false;
+  LEGACY_DRAFT_KEYS.forEach(function(oldKey) {
+    try {
+      var raw = localStorage.getItem(oldKey);
+      if (!raw) return;
+      var old = JSON.parse(raw);
+      Object.keys(old || {}).forEach(function(id) {
+        if (old[id] && old[id].data && !merged[id]) { merged[id] = old[id]; changed = true; }
+      });
+    } catch (e) {}
+  });
+  if (changed) setDrafts(merged);
+}
 
 function collectFormData() {
   const data = { vehicles: [], companions: [], toggles: {}, checkboxes: {}, fields: {} };
@@ -1822,12 +1868,19 @@ function applyFormData(data) {
     document.querySelectorAll('#'+gid+' .tog').forEach(t => t.classList.toggle('active', t.textContent.trim() === val));
   });
   Object.keys(data.checkboxes || {}).forEach(key => {
-    if (!key.includes('::')) return;
-    const sep = key.indexOf('::');
-    const containerId = key.slice(0, sep), val = key.slice(sep+2);
-    const container = document.getElementById(containerId); if (!container) return;
-    const cb = container.querySelector('input[type=checkbox][value="'+val+'"]');
-    if (cb) { cb.checked = data.checkboxes[key]; cb.closest('.body-zone')?.classList.toggle('selected', cb.checked); }
+    var containerId, val, checked = data.checkboxes[key];
+    if (key.includes('::')) {
+      var sep = key.indexOf('::');
+      containerId = key.slice(0, sep); val = key.slice(sep + 2);
+    } else {
+      var leg = key.match(/_([cm])$/);
+      if (!leg) return;
+      val = key.slice(0, -2);
+      containerId = leg[1] === 'c' ? 'c_body-zones' : 'body-zones';
+    }
+    var container = document.getElementById(containerId); if (!container) return;
+    var cb = container.querySelector('input[type=checkbox][value="' + val.replace(/"/g, '\\"') + '"]');
+    if (cb) { cb.checked = checked; cb.closest('.body-zone')?.classList.toggle('selected', checked); }
   });
 }
 
@@ -1847,11 +1900,18 @@ function loadDraft(id) {
   currentDraftId = id; applyFormData(drafts[id].data); renderDraftList(); showDraftStatus('Loaded: ' + drafts[id].label);
   updateFillDots();
   updateProgress();
+  refreshAllDobAges();
 }
 
 function deleteDraft(id, e) {
   e.stopPropagation();
-  const drafts = getDrafts(); delete drafts[id]; setDrafts(drafts);
+  var drafts = getDrafts();
+  var label = (drafts[id] && drafts[id].label) || 'this draft';
+  if (!confirm('Delete draft: ' + label + '?\nEliminar borrador: ' + label + '?')) return;
+  window._draftsAllowClear = true;
+  delete drafts[id];
+  setDrafts(drafts);
+  window._draftsAllowClear = false;
   if (currentDraftId === id) { currentDraftId = null; showDraftStatus('Draft deleted'); }
   renderDraftList();
 }
@@ -1872,22 +1932,72 @@ function showDraftStatus(msg) {
 function renderDraftList() {
   const drafts = getDrafts();
   const list = document.getElementById('draft-list');
+  const countEl = document.getElementById('draft-count');
   let keys = Object.keys(drafts).sort((a,b) => drafts[b].ts - drafts[a].ts);
   const filterEl = document.getElementById('draft-filter');
   const filterQ = (filterEl && filterEl.value || '').trim().toLowerCase();
-  if (filterEl) filterEl.style.display = keys.length >= 3 ? '' : 'none';
+  if (countEl) {
+    countEl.textContent = String(keys.length);
+    countEl.classList.toggle('empty', !keys.length);
+  }
   if (filterQ) keys = keys.filter(function(id) { return (drafts[id].label || '').toLowerCase().indexOf(filterQ) >= 0; });
   if (!keys.length) {
-    list.innerHTML = '<span style="font-size:12px;color:var(--text3);">' + (filterQ ? 'No matching drafts' : 'No drafts yet / Sin borradores') + '</span>';
+    list.innerHTML = '<span style="font-size:12px;color:var(--text3);">' + (filterQ ? 'No matching drafts / Sin coincidencias' : 'No drafts yet — save one or Import a backup / Sin borradores — guarde o importe') + '</span>';
     return;
   }
   list.innerHTML = keys.map(id => {
     const d = drafts[id], isActive = id === currentDraftId;
-    return `<span class="draft-slot${isActive?' active':''}" onclick="loadDraft('${id}')" title="Click to load">
+    const when = d.ts ? new Date(d.ts).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+    return `<span class="draft-slot${isActive?' active':''}" onclick="loadDraft('${id}')" title="${when ? 'Saved ' + when + ' — click to load' : 'Click to load'}">
       ${d.label}
       <span onclick="deleteDraft('${id}',event)" style="margin-left:6px;opacity:0.5;font-size:11px;" title="Delete">\u2715</span>
     </span>`;
   }).join('');
+}
+
+function exportDrafts() {
+  const drafts = getDrafts();
+  const keys = Object.keys(drafts);
+  if (!keys.length) {
+    showToast('No drafts to export / Sin borradores');
+    return;
+  }
+  const blob = new Blob([JSON.stringify(drafts, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'intake-drafts-' + new Date().toISOString().slice(0, 10) + '.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('Exported ' + keys.length + ' draft(s) / Exportados');
+}
+
+function importDraftsFile(input) {
+  const file = input && input.files && input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function() {
+    try {
+      const incoming = JSON.parse(reader.result);
+      if (!incoming || typeof incoming !== 'object' || Array.isArray(incoming)) throw new Error('bad shape');
+      const drafts = getDrafts();
+      let added = 0;
+      Object.keys(incoming).forEach(function(id) {
+        const d = incoming[id];
+        if (!d || !d.data) return;
+        drafts[id] = d;
+        added++;
+      });
+      if (!added) throw new Error('empty');
+      setDrafts(drafts);
+      renderDraftList();
+      showToast('Imported ' + added + ' draft(s) / Importados');
+      showDraftStatus('Imported ' + added + ' draft(s)');
+    } catch (e) {
+      showToast('Invalid draft file / Archivo inválido');
+    }
+    input.value = '';
+  };
+  reader.readAsText(file);
 }
 
 // Auto-save every 30s when a draft is active
@@ -1916,10 +2026,16 @@ window.addEventListener('beforeunload', function(e) {
 });
 
 // Init on load
+migrateDraftStorage();
 renderDraftList();
+(function announceDrafts() {
+  var n = Object.keys(getDrafts()).length;
+  if (n) showToast(n + ' saved draft' + (n === 1 ? '' : 's') + ' in this browser / borradores');
+})();
 renderCompanions();
 syncThemeBtn();
 updateProgress();
+refreshAllDobAges();
 
 // ============================================================
 // NEW FEATURES — efficiency helpers
@@ -1946,9 +2062,6 @@ function jumpToFirstMissing() {
   }
   showToast('All required fields filled / Todo listo');
 }
-
-var SECTION_ORDER = ['sec-client', 'sec-case', 'sec-companion', 'sec-medical', 'sec-vehicles', 'sec-notes'];
-var SEC_DOT_IDS = { 'sec-client': 'sec-dot-client', 'sec-case': 'sec-dot-case', 'sec-companion': 'sec-dot-companion', 'sec-medical': 'sec-dot-medical', 'sec-vehicles': 'sec-dot-vehicles', 'sec-notes': 'sec-dot-notes' };
 
 function jumpToNextIncomplete() {
   for (var i = 0; i < SECTION_ORDER.length; i++) {
@@ -2010,6 +2123,7 @@ function filterInjuryZones(q) {
 }
 
 function updateNavPills() {
+  if (!SEC_DOT_IDS) return;
   document.querySelectorAll('.nav-pill[data-section]').forEach(function(p) {
     var sec = p.getAttribute('data-section');
     var dotId = SEC_DOT_IDS[sec];
@@ -2049,11 +2163,28 @@ function isStateToken(s) {
   return false;
 }
 
+function flipCommaName(s) {
+  if (!s || s.indexOf(',') < 0) return (s || '').trim();
+  var m = s.trim().match(/^([^,]+),\s*(.+)$/);
+  if (!m) return s.trim();
+  return (m[2].trim() + ' ' + m[1].trim()).replace(/\s+/g, ' ').trim();
+}
+
+function normalizePersonName(s) {
+  if (!s) return '';
+  s = s.trim().replace(/\s+/g, ' ');
+  if (s.indexOf(',') >= 0) s = flipCommaName(s);
+  if (s === s.toUpperCase() && s.length > 3) {
+    s = s.toLowerCase().replace(/\b[a-z]/g, function(c) { return c.toUpperCase(); });
+  }
+  return s;
+}
+
 function looksLikePersonName(s) {
   if (!s || s.length < 3 || isStateToken(s)) return false;
   if (/^\d/.test(s) || /@/.test(s) || /\(\d{3}\)/.test(s) || /\d{3}.*\d{3}.*\d{4}/.test(s)) return false;
   if (/\b(Dr|St|Ave|Rd|Blvd|Ln|Ct|Way|Drive|Street)\.?\b/i.test(s)) return false;
-  return /^[A-Za-z][A-Za-z.'-]*(?:\s+[A-Za-z][A-Za-z.'-]*){1,4}$/.test(s.trim());
+  return /^[A-Za-z][A-Za-z.'-]*(?:\s+[A-Za-z][A-Za-z.'-]*){1,5}$/.test(s.trim());
 }
 
 function nameFromEmail(email) {
@@ -2090,10 +2221,10 @@ function parseLeadName(t) {
     }
   }
 
-  var named = t.match(/(?:Client|Nombre|Name|Lead|Caller)\s*[:=]\s*([^\n\r]+)/i);
+  var named = t.match(/(?:Client|Cliente|Nombre|Name|Lead|Caller|Contact)\s*[:=#]\s*([^\n\r]+)/i);
   if (named) {
-    var n = named[1].trim().split(/\s*[-–—|]\s*/)[0].trim();
-    if (looksLikePersonName(n)) return n;
+    var n = normalizePersonName(named[1].trim().split(/\s*[-–—|]\s*/)[0].trim());
+    if (n.length >= 3 && !isStateToken(n)) return n;
   }
 
   var lines = t.split(/\n+/).map(function(l) { return l.trim(); }).filter(Boolean);
@@ -2102,9 +2233,11 @@ function parseLeadName(t) {
     if (/^(new lead|phone|tel|email|address|date|dol|doa|source|fuente)/i.test(line)) continue;
     if (/^[\d(+@]/.test(line)) continue;
     if (parseUsAddressChunk(line)) continue;
-    if (looksLikePersonName(line)) return line;
-    var commaName = line.match(/^([A-Za-z][A-Za-z.'-]+),\s*([A-Za-z][A-Za-z.'-]+(?:\s+[A-Za-z][A-Za-z.'-]+)*)$/);
-    if (commaName) return (commaName[2] + ' ' + commaName[1]).trim();
+    if (line.indexOf(',') >= 0) {
+      var flipped = normalizePersonName(line);
+      if (looksLikePersonName(flipped)) return flipped;
+    }
+    if (looksLikePersonName(line)) return normalizePersonName(line);
   }
 
   var email = t.match(/[\w.+-]+@[\w.-]+\.\w{2,}/);
@@ -2143,7 +2276,202 @@ function parseUsAddressChunk(chunk) {
     }
   }
 
+  // e.g. 2322 caravelle cir Kissimmee fl 34746 (street + city + ST ZIP, no commas)
+  var stZip = line.match(/\s+([A-Za-z]{2})\s+(\d{5})(?:-\d{4})?$/i);
+  if (stZip && /\d/.test(line)) {
+    var beforeSt = line.slice(0, stZip.index).trim();
+    var words = beforeSt.split(/\s+/);
+    if (words.length >= 3) {
+      var cityName = words[words.length - 1];
+      var streetPart = words.slice(0, -1).join(' ');
+      if (streetPart.length > 2 && cityName.length > 2) {
+        return { address: streetPart, city: cityName, state: stZip[1].toUpperCase(), zip: stZip[2] };
+      }
+    }
+  }
+
   return null;
+}
+
+function normalizeLeadPhone(raw) {
+  if (!raw) return '';
+  var m = String(raw).match(/(?:\+?1[-.\s]?)?\(?([0-9]{3})\)?[-.\s.]?([0-9]{3})[-.\s.]?([0-9]{4})/);
+  if (!m) {
+    var d = String(raw).replace(/\D/g, '');
+    if (d.length === 11 && d.charAt(0) === '1') d = d.slice(1);
+    if (d.length === 10) m = [null, d.slice(0, 3), d.slice(3, 6), d.slice(6)];
+  }
+  return m ? '(' + m[1] + ') ' + m[2] + '-' + m[3] : String(raw).trim();
+}
+
+function normalizeLeadText(text) {
+  return String(text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+}
+
+function getClientLeadSection(t) {
+  var m = t.match(/(?:^|\n)\s*(?:pasajer[oa]s?|passengers?|acompañantes?)\s*:/i);
+  return m ? t.slice(0, m.index).trim() : t;
+}
+
+function parseAgeFromNameLine(nameLine) {
+  var m = String(nameLine).match(/\(\s*(\d{1,3})\s*(?:años|anos|years|year|a\.?\s*o\.?)\s*\)/i);
+  return m ? parseInt(m[1], 10) : null;
+}
+
+function stripAgeFromName(nameLine) {
+  return String(nameLine).replace(/\(\s*\d{1,3}\s*(?:años|anos|years|year|a\.?\s*o\.?)\s*\)/gi, '').trim();
+}
+
+function dobFromAgeYears(age) {
+  if (age == null || age < 0 || age > 130) return '';
+  var t = new Date();
+  var y = t.getFullYear() - age;
+  var m = String(t.getMonth() + 1).padStart(2, '0');
+  var d = String(t.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + d;
+}
+
+function applyContactFieldsToPerson(person, line, clientAddr) {
+  var em = line.match(/(?:^|\n)\s*correo\s*:\s*([\w.+-]+@[\w.-]+\.\w{2,})/i);
+  if (em) person.email = em[1].toLowerCase();
+  var ph = line.match(/(?:^|\n)\s*(?:tlf|tel|tel[eé]fono|numero|n[uú]mero|phone)\s*:\s*([0-9()\s\-.]{10,})/i);
+  if (ph) person.tel = normalizeLeadPhone(ph[1]);
+  if (/misma\s+direcci[oó]n/i.test(line) && clientAddr) {
+    person.address = clientAddr.address || '';
+    person.city = clientAddr.city || '';
+    person.state = clientAddr.state || '';
+    person.zip = clientAddr.zip || '';
+    person.sameAddress = true;
+  }
+  var dir = line.match(/(?:^|\n)\s*direcci[oó]n\s*:\s*(.+)$/i);
+  if (dir) {
+    var parsed = parseUsAddressChunk(dir[1].trim().replace(/\.\s*$/, ''));
+    if (parsed) {
+      person.address = parsed.address;
+      person.city = parsed.city;
+      person.state = parsed.state;
+      person.zip = parsed.zip;
+    } else {
+      person.address = dir[1].trim();
+    }
+  }
+}
+
+function isPassengerBlockStopLine(line) {
+  return /^(?:pasajer[oa]s?|passengers?|driver|conductor|source|fuente|doa|dol|notas?|cliente|cb|culpabilidad|pip|bi|polic[ií]a|hospital|trabaja|dolores)\s*:/i.test(line);
+}
+
+function parsePasajeraBlocks(text, clientAddr) {
+  var companions = [];
+  var lines = text.split(/\n+/).map(function(l) { return l.trim(); }).filter(Boolean);
+  for (var i = 0; i < lines.length; i++) {
+    var role = lines[i].match(/^(?:pasajer[oa]|passenger|acompañante)\s*:\s*(.*)$/i);
+    if (!role) continue;
+    var nameRaw = (role[1] || '').trim();
+    if (!nameRaw) continue;
+    var comp = {};
+    var age = parseAgeFromNameLine(nameRaw);
+    comp.name = normalizePersonName(stripAgeFromName(nameRaw));
+    if (age !== null) comp.dob = dobFromAgeYears(age);
+    for (var j = i + 1; j < lines.length; j++) {
+      if (isPassengerBlockStopLine(lines[j])) break;
+      applyContactFieldsToPerson(comp, lines[j], clientAddr);
+    }
+    if (comp.name) companions.push(comp);
+  }
+  if (!companions.length) {
+    var block = text.match(/pasajer[oa]\s*:\s*([^\n]+)\n([\s\S]*?)(?=(?:\n\s*(?:source|fuente|doa|dol|notas?|cliente|cb|culpabilidad|pip|bi|polic|hospital|trabaja|dolores|driver|conductor)\s*:|$))/i);
+    if (block) {
+      var comp2 = {};
+      var age2 = parseAgeFromNameLine(block[1]);
+      comp2.name = normalizePersonName(stripAgeFromName(block[1].trim()));
+      if (age2 !== null) comp2.dob = dobFromAgeYears(age2);
+      block[2].split(/\n+/).map(function(l) { return l.trim(); }).filter(Boolean).forEach(function(line) {
+        if (!isPassengerBlockStopLine(line)) applyContactFieldsToPerson(comp2, line, clientAddr);
+      });
+      if (comp2.name) companions.push(comp2);
+    }
+  }
+  return companions;
+}
+
+function parseLeadCompanions(text, clientAddr) {
+  var companions = parsePasajeraBlocks(text, clientAddr);
+  var sec = text.split(/pasajeros?\s*:/i)[1];
+  if (!sec) {
+    attachCompanionInjuries(text, companions);
+    return companions;
+  }
+  var stop = sec.search(/\n\s*(?:cliente\s+previo|cliente\s+dificil|cb\s*:|cb\s+de\b)/i);
+  if (stop >= 0) sec = sec.slice(0, stop);
+  var lines = sec.split(/\n+/).map(function(l) { return l.trim(); }).filter(Boolean);
+  lines.forEach(function(line) {
+    if (line.length < 4) return;
+    if (/^(?:pasajer[oa]|passenger)\s*:/i.test(line)) return;
+    var comp = {};
+    applyContactFieldsToPerson(comp, line, clientAddr);
+    var namePart = line.split(/\s+(?:tlf|tel|tel[eé]fono|numero|n[uú]mero|email|correo)\s*:/i)[0].trim();
+    namePart = namePart.replace(/\.\s*$/, '').trim();
+    var age = parseAgeFromNameLine(namePart);
+    if (age !== null) comp.dob = dobFromAgeYears(age);
+    namePart = stripAgeFromName(namePart);
+    if (namePart.length >= 3) comp.name = normalizePersonName(namePart);
+    if (comp.name) companions.push(comp);
+  });
+  attachCompanionInjuries(text, companions);
+  return companions;
+}
+
+function attachCompanionInjuries(text, companions) {
+  var m = text.match(/(?:^|\n)\s*dolores\s*:\s*([^\n]+)/i);
+  if (!m || !companions.length) return;
+  var blob = m[1];
+  companions.forEach(function(c) {
+    if (!c.name) return;
+    var first = c.name.split(/\s+/)[0];
+    if (!first || first.length < 2) return;
+    var re = new RegExp(first + '[^.]*(?:\\.|$)', 'i');
+    var hit = blob.match(re);
+    if (hit) c.injuryNotes = hit[0].replace(/\.\s*$/, '').trim();
+  });
+}
+
+function applyLeadCompanions(list) {
+  if (!list || !list.length) return 0;
+  companions = [];
+  cCounter = 0;
+  list.forEach(function() {
+    cCounter++;
+    companions.push(cCounter);
+  });
+  renderCompanions();
+  list.forEach(function(c, idx) {
+    var id = companions[idx];
+    if (!id) return;
+    if (c.name) { var n = document.getElementById('c' + id + '_name'); if (n) n.value = c.name; }
+    if (c.tel) {
+      var t = document.getElementById('c' + id + '_tel');
+      if (t) { t.value = c.tel; fmtPhone(t); }
+    }
+    if (c.email) { var e = document.getElementById('c' + id + '_email'); if (e) e.value = c.email; }
+    if (c.address) { var a = document.getElementById('c' + id + '_address'); if (a) a.value = c.address; }
+    if (c.city) { var ci = document.getElementById('c' + id + '_city'); if (ci) ci.value = c.city; }
+    if (c.state) { var st = document.getElementById('c' + id + '_state'); if (st) st.value = c.state; }
+    if (c.zip) { var z = document.getElementById('c' + id + '_zip'); if (z) z.value = c.zip; }
+    if (c.dob) {
+      var dobEl = document.getElementById('c' + id + '_dob');
+      if (dobEl) dobEl.value = c.dob;
+    }
+    if (c.injuryNotes) {
+      var inj = document.getElementById('c' + id + '_injury_notes');
+      if (inj) inj.value = c.injuryNotes;
+    }
+  });
+  if (typeof refreshAllDobAges === 'function') refreshAllDobAges();
+  jumpToSection('sec-companion');
+  var first = document.getElementById('c' + companions[0] + '_name');
+  if (first) setTimeout(function() { first.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 400);
+  return list.length;
 }
 
 function parseLeadDate(t) {
@@ -2167,23 +2495,84 @@ function parseLeadDate(t) {
 }
 
 function parseLeadPaste(text) {
-  var out = { filled: [] };
-  if (!text || !text.trim()) return out;
-  var t = text.trim();
+  var out = { filled: [], companions: [] };
+  if (!text || !String(text).trim()) return out;
+  var t = normalizeLeadText(text);
+  var clientBlock = getClientLeadSection(t);
 
-  var email = t.match(/[\w.+-]+@[\w.-]+\.\w{2,}/);
-  if (email) { out.email = email[0]; out.filled.push('email'); }
-
-  var phone = t.match(/(?:\+?1[-.\s]?)?\(?([0-9]{3})\)?[-.\s.]?([0-9]{3})[-.\s.]?([0-9]{4})/);
-  if (phone) {
-    out.tel = '(' + phone[1] + ') ' + phone[2] + '-' + phone[3];
-    out.filled.push('phone');
+  var packHdr = t.match(/(?:^|\n)\s*(?:new lead\s*[-–—]\s*)?([A-Za-z]+)\s*[-–—]\s*\d+\s*pack\b/im);
+  if (packHdr) {
+    var packSt = accidentStateOption(packHdr[1].trim());
+    if (packSt) {
+      out.accident_state = packSt;
+      out.filled.push('accident state');
+    }
   }
 
-  var nameParsed = parseLeadName(t);
-  if (nameParsed) {
-    out.name = nameParsed;
+  var srcL = t.match(/(?:^|\n)\s*(?:source|fuente)\s*:\s*([^\n]+)/i);
+  if (srcL) {
+    out.source = srcL[1].trim();
+    out.filled.push('source');
+  } else if (/\b(?:accident vault|from av|source[:\s]*av)\b/i.test(t) || /^av\b/im.test(t)) {
+    out.source = 'AV'; out.filled.push('source');
+  } else if (/\b(?:zen[ -]?desk|from zen|source[:\s]*zen)\b/i.test(t)) {
+    out.source = 'Zen'; out.filled.push('source');
+  } else if (/\b(?:sms|text message|source[:\s]*sms)\b/i.test(t)) {
+    out.source = 'SMS'; out.filled.push('source');
+  }
+
+  var driverL = clientBlock.match(/(?:^|\n)\s*(?:driver|conductor)\s*:\s*([^\n]+)/i);
+  var nameL = clientBlock.match(/(?:^|\n)\s*(?:name|nombre)\s*:\s*([^\n]+)/i);
+  if (driverL) {
+    out.name = normalizePersonName(stripAgeFromName(driverL[1].trim()));
     out.filled.push('name');
+  } else if (nameL) {
+    out.name = normalizePersonName(nameL[1].trim());
+    out.filled.push('name');
+  } else {
+    var nameParsed = parseLeadName(clientBlock);
+    if (nameParsed) {
+      out.name = nameParsed;
+      out.filled.push('name');
+    }
+  }
+
+  var corrL = clientBlock.match(/(?:^|\n)\s*correo\s*:\s*([\w.+-]+@[\w.-]+\.\w{2,})/i);
+  if (corrL) {
+    out.email = corrL[1].toLowerCase();
+    out.filled.push('email');
+  } else {
+    var email = clientBlock.match(/[\w.+-]+@[\w.-]+\.\w{2,}/);
+    if (email) { out.email = email[0].toLowerCase(); out.filled.push('email'); }
+  }
+
+  var numL = clientBlock.match(/(?:^|\n)\s*(?:numero|n[uú]mero|phone|tel|tel[eé]fono)\s*:\s*([^\n]+)/i);
+  if (numL) {
+    out.tel = normalizeLeadPhone(numL[1]);
+    out.filled.push('phone');
+  } else {
+    var phone = clientBlock.match(/(?:\+?1[-.\s]?)?\(?([0-9]{3})\)?[-.\s.]?([0-9]{3})[-.\s.]?([0-9]{4})/);
+    if (!phone) {
+      var phoneLabel = clientBlock.match(/(?:^|\n)\s*(?:phone|tel|tel[eé]fono|cell|móvil|mobile)\s*[:=#]?\s*([0-9]{10})\b/im);
+      if (phoneLabel) phone = [null, phoneLabel[1].slice(0, 3), phoneLabel[1].slice(3, 6), phoneLabel[1].slice(6)];
+    }
+    if (phone) {
+      out.tel = '(' + phone[1] + ') ' + phone[2] + '-' + phone[3];
+      out.filled.push('phone');
+    }
+  }
+
+  var notaL = t.match(/(?:^|\n)\s*notas?\s*:\s*([^\n]+)/i);
+  if (notaL) out.notes = notaL[1].trim();
+
+  var doloresL = t.match(/(?:^|\n)\s*dolores\s*:\s*([^\n]+)/i);
+  if (doloresL) {
+    out.description = doloresL[1].trim();
+    if (out.name) {
+      var clientFirst = out.name.split(/\s+/)[0];
+      var clientPain = doloresL[1].match(new RegExp(clientFirst + '[^.]*(?:\\.|$)', 'i'));
+      if (clientPain) out.description = clientPain[0].replace(/\.\s*$/, '').trim();
+    }
   }
 
   var nlHead = t.match(/New Lead\s*[-–—]\s*([^\n\r]+)/i);
@@ -2210,7 +2599,7 @@ function parseLeadPaste(text) {
   out.dol = parseLeadDate(t);
   if (out.dol) out.filled.push('DOL');
 
-  var addrLabel = t.match(/(?:^|\n)\s*(?:address|direcci[oó]n|street address|mailing address|client address)\s*[:#]\s*([^\n]+)/i);
+  var addrLabel = clientBlock.match(/(?:^|\n)\s*(?:address|direcci[oó]n|street address|mailing address|client address)\s*[:#]\s*([^\n]+)/i);
   if (addrLabel) {
     var parsed = parseUsAddressChunk(addrLabel[1]);
     if (parsed) {
@@ -2223,7 +2612,7 @@ function parseLeadPaste(text) {
   }
 
   if (!out.address) {
-    var lines = t.split(/\n+/);
+    var lines = clientBlock.split(/\n+/);
     for (var li = 0; li < lines.length; li++) {
       var parsedLine = parseUsAddressChunk(lines[li]);
       if (parsedLine && /\d/.test(parsedLine.address)) {
@@ -2271,7 +2660,38 @@ function parseLeadPaste(text) {
     }
   }
 
+  out.companions = parseLeadCompanions(t, {
+    address: out.address,
+    city: out.city,
+    state: out.state,
+    zip: out.zip
+  });
+  if (out.companions.length) out.filled.push('companions (' + out.companions.length + ')');
+
   return out;
+}
+
+function jumpAfterLeadPaste(p) {
+  if (p.companions && p.companions.length) {
+    jumpToSection('sec-companion');
+    var el = document.getElementById('c1_name') || document.querySelector('[id^="c"][id$="_name"]');
+    if (el) setTimeout(function() { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.focus({ preventScroll: true }); }, 400);
+    return;
+  }
+  var targetSec = 'sec-client';
+  var focusId = 'name';
+  if (p.dol) targetSec = 'sec-case';
+  if (!p.name && p.tel) focusId = 'tel';
+  else if (!p.name && !p.tel && p.address) focusId = 'address';
+  jumpToSection(targetSec);
+  if (p.dol) jumpToSection('sec-case');
+  var el = document.getElementById(focusId);
+  if (el) {
+    setTimeout(function() {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.focus({ preventScroll: true });
+    }, 350);
+  }
 }
 
 function applyLeadPaste() {
@@ -2279,11 +2699,18 @@ function applyLeadPaste() {
   var p = parseLeadPaste(text);
   var hint = document.getElementById('lead-paste-hint');
   if (!p.filled.length) {
-    if (hint) hint.textContent = 'No fields detected — try pasting lead title, phone, email, address, or dates.';
+    if (hint) hint.textContent = 'No fields detected — include name, phone, email, address, DOL, or “New Lead - …” / No se detectó nada';
     showToast('Nothing detected / No se detectó nada');
     return;
   }
-  if (p.name) document.getElementById('name').value = p.name;
+  if (p.source) {
+    document.getElementById('source').value = p.source;
+    setFieldValidation('f-source', 'source', false);
+    document.querySelectorAll('#source-quick-tg .tog').forEach(function(t) {
+      t.classList.toggle('active', (t.getAttribute('data-src') || t.textContent.trim()) === p.source);
+    });
+  }
+  if (p.name) document.getElementById('name').value = normalizePersonName(p.name);
   if (p.tel) document.getElementById('tel').value = p.tel;
   if (p.email) document.getElementById('email').value = p.email;
   if (p.address) document.getElementById('address').value = p.address;
@@ -2292,7 +2719,17 @@ function applyLeadPaste() {
   if (p.zip) document.getElementById('zip').value = p.zip;
   if (p.dol) document.getElementById('dol').value = p.dol;
   if (p.accident_state) document.getElementById('accident_state').value = p.accident_state;
+  if (p.notes) {
+    var notesEl = document.getElementById('intake_notes');
+    if (notesEl) notesEl.value = p.notes;
+  }
+  if (p.description) {
+    var descEl = document.getElementById('description');
+    if (descEl) descEl.value = p.description;
+  }
   if (p.tel) fmtPhone(document.getElementById('tel'));
+  if (p.companions && p.companions.length) applyLeadCompanions(p.companions);
+  onFormSync();
 
   var addrQuery = [p.address, p.city, p.state, p.zip].filter(Boolean).join(', ');
   if (!addrQuery && p.address) addrQuery = p.address;
@@ -2301,16 +2738,23 @@ function applyLeadPaste() {
     onFormSync();
     var msg = 'Applied: ' + p.filled.join(', ');
     if (geoNote) msg += ' · ' + geoNote;
+    var still = [];
+    if (!v('source')) still.push('source');
+    if (!v('name')) still.push('name');
+    if (!v('tel')) still.push('phone');
+    if (!v('dol')) still.push('DOL');
+    if (still.length) msg += ' · Still need / Falta: ' + still.join(', ');
     if (hint) hint.textContent = msg;
-    showToast('Lead applied / Lead aplicado');
-    var lp = document.getElementById('lead-paste');
-    if (lp) lp.classList.remove('open');
-    jumpToFirstMissing();
+    showToast(p.companions && p.companions.length
+      ? 'Lead + ' + p.companions.length + ' companions applied / Lead + acompañantes'
+      : 'Lead applied — scroll to Client / Lead aplicado');
+    jumpAfterLeadPaste(p);
   }
 
   if (addrQuery && addrQuery.length > 5) {
-    if (hint) hint.textContent = 'Applied fields — confirm address… / Confirme dirección…';
-    showToast('Confirm address… / Confirme dirección…');
+    if (hint) hint.textContent = 'Fields filled — confirm address below in Client section / Confirme dirección en Cliente';
+    showToast('Review Client section — confirm address / Revise Cliente');
+    jumpAfterLeadPaste(p);
     geocodeAddressCandidates(addrQuery, 3).then(function(cands) {
       if (!cands.length) {
         finishApply('Could not verify — kept paste / No verificada');
@@ -2327,6 +2771,8 @@ function applyLeadPaste() {
           finishApply('Kept pasted address / Se mantuvo texto pegado');
         }
       });
+    }).catch(function() {
+      finishApply('Verify failed — kept paste / Verificación falló');
     });
     return;
   }
@@ -2465,22 +2911,44 @@ function clearRequiredErrorIfFilled(e) {
 document.addEventListener('input', clearRequiredErrorIfFilled);
 document.addEventListener('change', clearRequiredErrorIfFilled);
 
-// DOB → age calculator
-function updateAge() {
-  const val  = document.getElementById('dob').value;
-  const span = document.getElementById('dob-age');
-  if (!val || !span) return;
-  const birth = new Date(val + 'T00:00:00');
-  const today = new Date();
-  let age = today.getFullYear() - birth.getFullYear();
-  const m = today.getMonth() - birth.getMonth();
+// DOB → age calculator (client + companions)
+function calcAgeYears(dobVal) {
+  if (!dobVal) return null;
+  var birth = new Date(dobVal + 'T00:00:00');
+  var today = new Date();
+  var age = today.getFullYear() - birth.getFullYear();
+  var m = today.getMonth() - birth.getMonth();
   if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
-  if (age >= 0 && age < 130) {
-    span.textContent = 'Age: ' + age;
+  if (age >= 0 && age < 130) return age;
+  return null;
+}
+
+function setDobAgeBadge(badgeId, dobVal) {
+  var span = document.getElementById(badgeId);
+  if (!span) return;
+  var age = calcAgeYears(dobVal);
+  if (age !== null) {
+    span.textContent = 'Age / Edad: ' + age;
     span.style.display = '';
   } else {
+    span.textContent = '';
     span.style.display = 'none';
   }
+}
+
+function updateAge() {
+  var el = document.getElementById('dob');
+  setDobAgeBadge('dob-age', el ? el.value : '');
+}
+
+function updateCompanionAge(id) {
+  var el = document.getElementById('c' + id + '_dob');
+  setDobAgeBadge('c' + id + '_dob-age', el ? el.value : '');
+}
+
+function refreshAllDobAges() {
+  updateAge();
+  companions.forEach(function(id) { updateCompanionAge(id); });
 }
 
 // Phone auto-format → (305) 555-1234

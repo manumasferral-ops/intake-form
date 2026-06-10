@@ -14,6 +14,18 @@ Everything for improving this project lives **in this repo**. Open `~/intake-for
 - **Vanilla** HTML/CSS/JS only — no React/Next/npm unless explicitly requested.
 - **Bilingual** EN/ES on all new UI copy.
 - **Preserve IDs:** `#address`, `#city`, `#state`, `#zip`, `#name`, `#tel`, `#dol`, `#source`, etc. (drafts, PDF, lead paste, automation).
+
+## Draft preservation (mandatory — user rule)
+
+Staff drafts live in browser `localStorage` under **`intake_drafts`**. **Never delete or wipe them** when editing `form.html`.
+
+- **Do not** change `DRAFT_KEY` without a migration that copies every old entry into the new key.
+- **Do not** call `localStorage.clear()`, `removeItem('intake_drafts')`, or replace the whole draft object with `{}` on load or deploy.
+- **Import** must **merge** into existing drafts (never replace the full store unless the user explicitly asks).
+- **Do not** remove the draft bar, Export, or Import without a replacement.
+- When changing `collectFormData` / `applyFormData`, keep **backward compatibility** so older saved drafts still load.
+- Code must block accidental full wipe (empty write over non-empty store).
+- After substantive form changes, remind user to **Export** drafts once as backup (`intake-drafts-*.json`).
 - **Static hosting** — free geocoders (ArcGIS, Nominatim for companions/vehicles), no API keys, no backend.
 - **UI ideas:** https://21st.dev/community/components — adapt small patterns (buttons, fields, cards, feedback), not full layout rewrites.
 
