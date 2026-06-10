@@ -577,14 +577,18 @@
       <div class="field gap-top">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
           <label>Description <span class="es">— type in Spanish / escribe en español</span></label>
-          <div style="display:flex;align-items:center;gap:8px;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <button type="button" class="btn" id="btn-v12" onclick="runV12()" title="Convert to standard V1/V2 English accident sentence / Convertir a oración V1/V2 en inglés" style="font-size:12px;padding:5px 10px;">⚡ V1/V2 English</button>
             <span style="font-size:12px;color:var(--text3);">Auto-translate to English ↓</span>
             <label class="switch"><input type="checkbox" id="translate-sw" onchange="toggleTranslate(this)"><span class="sw-track"></span></label>
           </div>
         </div>
         <textarea id="description" placeholder="Describe el accidente aquí... (se traducirá al inglés automáticamente)"></textarea>
         <div id="translation-box" style="display:none;margin-top:8px;">
-          <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">English translation (auto) / Traducción al inglés</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;">
+            <div style="font-size:11px;color:var(--text3);" id="translation-box-label">English translation (auto) / Traducción al inglés</div>
+            <button type="button" class="btn" onclick="useTranslatedAsDescription()" style="font-size:11px;padding:3px 9px;">↑ Use as description / Usar</button>
+          </div>
           <textarea id="description_translated" placeholder="English translation will appear here..." style="min-height:64px;background:var(--surface2);color:var(--text2);"></textarea>
         </div>
       </div>
@@ -1457,6 +1461,144 @@ document.addEventListener('input', function(e) {
     window._transTimer = setTimeout(autoTranslate, 800);
   }
 });
+
+/* ── V1/V2 accident sentence converter ──
+   Turns a short Spanish (or English) "how it happened" note into the standard
+   one-sentence English description used on intakes: V1 = at-fault vehicle,
+   V2 = our client. Pattern library distilled from the staff's reference chat. */
+function v12Normalize(s) {
+  return ' ' + String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim() + ' ';
+}
+
+function v12Convert(raw) {
+  var t = v12Normalize(raw);
+  if (t.trim().length < 6) return null;
+
+  var her = /\b(ella|la (chocaron|impacta|impacto|choca)|parada |detenida |nuestra clienta)\b/.test(t);
+  var pron = her ? 'her' : 'his';
+
+  // Did the client (V2) cause it?
+  var clientAtFault = /nuestro cliente no (hizo|paro|se detuvo)|nuestra clienta no (hizo|paro)|v2 no hizo|cliente .{0,12}se salta/.test(t);
+
+  // ── impact side / part ──
+  var side = '';
+  if (/(puertas? del? |parte del? |lado del? )?(conductor|chofer)|driver side/.test(t)) side = 'driver side';
+  else if (/copiloto|pasajero|passenger side/.test(t)) side = 'passenger side';
+  else if (/parte izquierda|lado izquierdo|left side/.test(t)) side = 'left side';
+  else if (/parte derecha|lado derecho|right side/.test(t)) side = 'right side';
+  else if (/bumper (delantero|de adelante)|parte (de adelante|delantera)|por delante|de frente|front bumper|the front/.test(t)) side = 'front';
+
+  var rearHit = /(por|en) (la parte de )?atras|por detras|parte trasera|puerta trasera|rear.?end|rearen|por la parte trasera/.test(t);
+
+  // ── V1 (at-fault) action ──
+  var act = '';
+  if (/se salta (el|la|su) (semaforo|luz)|luz (en )?rojo para el|se paso (el|la) (luz|semaforo)|ran (a|the) red light/.test(t)) act = 'ranRed';
+  else if (/se salta (el|su|un) stop|no (hizo|hace) (un|el|su) stop|no se detiene en (el|su) stop|no respeto (el|su) stop|ran a stop sign|failed to stop/.test(t)) act = 'ranStop';
+  else if (/invade|invadio|le invadi/.test(t)) act = 'invade';
+  else if (/cambi(ar|ando|o) de (carril|canal|linea)/.test(t)) act = 'laneChange';
+  else if (/(marcha atras|retroced|reversa|backing|reversed)/.test(t)) act = 'reverse';
+  else if (/(haciendo|intentando( hacer)?|hizo|hacer) una? izquierda|giro a la izquierda|left turn/.test(t) && !/v2 (estaba|iba|queria).{0,30}izquierda/.test(t)) act = 'leftTurn';
+  else if (rearHit) act = 'rearEnd';
+
+  var distracted = /telefono|distraid|on the phone/.test(t);
+  var speeding = /exceso de velocidad|gran velocidad|alta velocidad|unsafe speed|excessive speed/.test(t);
+
+  // ── V2 scene ──
+  var scene = '';
+  if (/estacionad|parquead|parked/.test(t)) scene = 'parked';
+  else if (/esperando que (un|el) peaton|peaton cruzara/.test(t)) scene = 'stopped waiting for a pedestrian to cross';
+  else if (/(parad|detenid|esperando|stopped|waiting).{0,30}(semaforo|luz|red light)|semaforo en rojo.{0,25}(parad|detenid|la chocaron|lo chocaron)|en un semaforo/.test(t)) scene = 'stopped at a red light';
+  else if (/esperando que la luz|esperando (el|la) (cambio|verde)|waiting for the light/.test(t)) scene = 'stopped waiting for the light to turn green';
+  else if (/parad.{0,20}stop|detenid.{0,20}stop/.test(t) && act !== 'ranStop') scene = 'stopped at a stop sign';
+  else if (/yield/.test(t)) scene = 'completely stopped at a yield sign';
+  else if (/luz se puso en verde|empieza a avanzar|empezo a avanzar|proceeded on green/.test(t)) scene = 'proceeding forward on a green light';
+  else if (/(reduciendo|bajando|bajar) la velocidad|empezo a reducir|slowing down/.test(t)) scene = 'slowing down';
+  else if (/mucho trafico|heavy traffic/.test(t)) scene = 'moving in heavy traffic';
+  else if (/saliendo de (la autopista|el highway|el freeway)|exiting the (highway|freeway)/.test(t)) scene = 'exiting the highway';
+  else if (/(haciendo|hacer|queria hacer) una? derecha|making a right/.test(t) && act !== 'reverse') scene = 'making a right turn';
+  else if (/iba por su (via|linea|carril|senda)|va por su (via|carril)|iba manejando|iba en su (via|carril)|on (his|her) lane|in (his|her) lane|transitaba|circulaba/.test(t)) scene = 'traveling in ' + pron + ' lane';
+  else if (/en movimiento|in motion/.test(t)) scene = 'in motion';
+  else if (/estaba(n)? (parad|detenid)|was stopped/.test(t)) scene = 'stopped';
+
+  // ── compose ──
+  function cap(s2) { return s2.charAt(0).toUpperCase() + s2.slice(1); }
+
+  if (clientAtFault && act === 'ranStop') return 'V2 failed to stop and V1 impacted V2\u2019s vehicle.';
+
+  if (act === 'rearEnd' || (rearHit && !act)) {
+    var v1mod = distracted ? 'V1, driving while distracted on the phone,' : speeding ? 'V1, traveling at excessive speed,' : 'V1';
+    var tail = v1mod === 'V1' ? 'V1 rear-ended V2' : v1mod + ' rear-ended V2';
+    if (scene) return cap('V2 was ' + scene + ' when ' + tail + '.');
+    return 'V2 was in motion when ' + tail + '.';
+  }
+  if (act === 'ranRed') {
+    var sc = scene || ('traveling in ' + pron + ' lane');
+    return 'V2 was ' + sc + ' when V1 ran a red light and impacted the ' + (side || 'side') + ' of V2\u2019s vehicle.';
+  }
+  if (act === 'ranStop') {
+    if (side) return 'V1 ran a stop sign and impacted the ' + side + ' of V2\u2019s vehicle.';
+    return 'V1 failed to stop and impacted V2\u2019s vehicle.';
+  }
+  if (act === 'invade') {
+    var inv = 'V1 invaded V2\u2019s lane and impacted the ' + (side || 'side') + ' of V2\u2019s vehicle.';
+    if (scene && scene !== 'traveling in ' + pron + ' lane') inv = 'V2 was ' + scene + ' when ' + inv.replace('V1 invaded', 'V1 invaded');
+    return inv;
+  }
+  if (act === 'laneChange') return 'V1 attempted to change lanes, obstructing V2\u2019s path, and impacted ' + (side ? 'the ' + side + ' of ' : '') + 'V2\u2019s vehicle.';
+  if (act === 'reverse') {
+    if (scene === 'parked') return 'V2 was parked when V1 reversed and impacted ' + (side ? 'the ' + side + ' of ' : '') + 'V2\u2019s vehicle.';
+    return 'V1 reversed and impacted ' + (side ? 'the ' + side + ' of ' : '') + 'V2\u2019s vehicle.';
+  }
+  if (act === 'leftTurn') {
+    var sc2 = scene || ('traveling in ' + pron + ' lane');
+    return 'V2 was ' + sc2 + ' when V1 attempted to make a left turn and impacted the ' + (side || 'side') + ' of V2\u2019s vehicle.';
+  }
+  if (scene && side) return 'V2 was ' + scene + ' when V1 impacted the ' + side + ' of V2\u2019s vehicle.';
+  if (scene && /(choca|impacta|impacto|chocaron|collid|hit )/.test(t)) return 'V2 was ' + scene + ' when V1 impacted V2\u2019s vehicle.';
+  return null;
+}
+
+// Light cleanup applied to machine translation when the rules don't match
+function v12Post(s) {
+  var out = ' ' + s + ' ';
+  out = out.replace(/\bour client'?s vehicle\b/gi, 'V2\u2019s vehicle')
+           .replace(/\bour client(a)?\b/gi, 'V2')
+           .replace(/\bthe other (vehicle|car|driver)\b/gi, 'V1')
+           .replace(/\bthe culprit\b/gi, 'V1')
+           .replace(/\bguilty (vehicle|driver|party)\b/gi, 'V1')
+           .replace(/\s+/g, ' ').trim();
+  return out.charAt(0).toUpperCase() + out.slice(1);
+}
+
+function runV12() {
+  var desc = document.getElementById('description').value.trim();
+  if (!desc) { showToast('Type the accident description first / Escriba la descripci\u00f3n primero'); return; }
+  var box = document.getElementById('translation-box');
+  var label = document.getElementById('translation-box-label');
+  var out = document.getElementById('description_translated');
+  box.style.display = 'block';
+  var s = v12Convert(desc);
+  if (s) {
+    out.value = s;
+    if (label) label.textContent = 'V1/V2 English — review & edit / Revise y edite';
+    showToast('V1/V2 ready \u2014 review, edit, then \u201cUse\u201d / Revise y use');
+  } else {
+    if (label) label.textContent = 'V1/V2 English (via translation) — review & edit / Revise y edite';
+    out.value = 'Converting...';
+    fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(desc) + '&langpair=es|en')
+      .then(function(r) { return r.json(); })
+      .then(function(d) { out.value = v12Post(d.responseData && d.responseData.translatedText || desc); })
+      .catch(function() { out.value = '(Could not convert \u2014 check connection / Sin conexi\u00f3n)'; });
+  }
+}
+
+function useTranslatedAsDescription() {
+  var out = document.getElementById('description_translated');
+  if (!out.value.trim() || /^(Translating|Converting)/.test(out.value)) return;
+  document.getElementById('description').value = out.value.trim();
+  onFormSync();
+  showToast('Description updated / Descripci\u00f3n actualizada');
+}
 
 // Reset all GPS-verify badges/panels so a fresh intake never shows a stale "Verified ✓"
 function resetAddressVerifyUI() {
