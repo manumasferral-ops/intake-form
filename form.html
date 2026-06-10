@@ -162,6 +162,7 @@
   .btn { font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; padding: 10px 22px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; transition: all 0.15s; }
   .btn:hover { background: var(--surface2); border-color: var(--border2); }
   .btn:focus-visible, .tog:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .section-head:focus-visible, .lead-paste-head:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
   .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent-deep); box-shadow: 0 2px 8px rgba(26,86,219,0.25); }
   .btn-primary:hover { background: var(--accent-deep); border-color: var(--accent-deep); }
   .share-info { font-size: 12px; color: var(--text3); }
@@ -275,12 +276,16 @@
   .nav-pill.sec-done { border-color: #b8e0c8; color: var(--success); background: #f0faf4; }
   html[data-theme="dark"] .nav-pill.sec-done { background: #1a3328; border-color: #2d5a42; }
   html[data-theme="dark"] .req-chip.done { background: #1a3328; border-color: #2d5a42; color: #7dcea0; }
+  html[data-theme="dark"] .req-chip.missing { background: #3a3018; border-color: #5a4a20; color: #f0d080; }
+  html[data-theme="dark"] .addr-verify-badge.stale { border-color: #6a3535; }
   .source-quick { margin-top: 8px; }
   .injury-filter { margin-bottom: 8px; font-size: 13px; }
   .body-zone.bz-hidden, .bz-col-hdr.bz-hidden { display: none !important; }
   @media (max-width: 600px) {
     .nav-pills { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
     .toolbar-actions { justify-content: flex-start; }
+    .float-bar { flex-wrap: wrap; gap: 6px; padding: 8px 0.75rem; }
+    .float-bar .btn { padding: 7px 10px; font-size: 12px; }
   }
 
   @media print {
@@ -906,6 +911,7 @@ function renderVehicles() {
   });
   // Setup location autocomplete for each vehicle
   vehicles.forEach(function(id) { setupArcGISAddressGroup(resolveAddrGroup('v' + id + 'loc')); });
+  if (typeof applyA11yRoles === 'function') applyA11yRoles(list);
   if (typeof updateProgress === 'function') updateProgress();
 }
 
@@ -1345,6 +1351,8 @@ function jumpToSection(id) {
   var el = document.getElementById(id);
   if (!el) return;
   el.classList.remove('collapsed');
+  var head = el.querySelector('.section-head');
+  if (head) head.setAttribute('aria-expanded', 'true');
   el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   document.querySelectorAll('.nav-pill[data-section]').forEach(function(p) {
     p.classList.toggle('active-step', p.getAttribute('data-section') === id);
@@ -1352,7 +1360,11 @@ function jumpToSection(id) {
 }
 
 function setAllSections(collapsed) {
-  document.querySelectorAll('#main .section').forEach(function(sec) { sec.classList.toggle('collapsed', collapsed); });
+  document.querySelectorAll('#main .section').forEach(function(sec) {
+    sec.classList.toggle('collapsed', collapsed);
+    var head = sec.querySelector('.section-head');
+    if (head) head.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+  });
 }
 
 function copyIntakeSummary() {
@@ -1446,6 +1458,17 @@ document.addEventListener('input', function(e) {
   }
 });
 
+// Reset all GPS-verify badges/panels so a fresh intake never shows a stale "Verified ✓"
+function resetAddressVerifyUI() {
+  addrVerifiedFp = {};
+  pendingAddressVerify = null;
+  document.querySelectorAll('.addr-verify-badge').forEach(function(b) { b.hidden = true; b.className = 'addr-verify-badge'; b.textContent = ''; });
+  document.querySelectorAll('.addr-confirm-panel.show').forEach(function(p) { p.classList.remove('show'); });
+  document.querySelectorAll('.addr-stale').forEach(function(f) { f.classList.remove('addr-stale'); });
+  var st = document.getElementById('addr-verify-status');
+  if (st) st.textContent = 'Search & verify use same provider (ArcGIS) / Misma fuente';
+}
+
 function clearForm() {
   document.querySelectorAll('input:not([type=checkbox]), textarea, select').forEach(el => el.value = '');
   document.querySelectorAll('input[type=checkbox]').forEach(cb => { cb.checked = false; cb.closest('.body-zone')?.classList.remove('selected'); });
@@ -1459,6 +1482,8 @@ function clearForm() {
   addVehicle(); addVehicle();
   companions = []; cCounter = 0;
   renderCompanions();
+  resetAddressVerifyUI();
+  refreshAllDobAges();
   updateFillDots();
   updateProgress();
 }
@@ -1550,8 +1575,9 @@ function generatePDF() {
     num: idx+1, id,
     year: v('v'+id+'_year'), make: v('v'+id+'_make'), model: v('v'+id+'_model'),
     ins: v('v'+id+'_ins'), plate: v('v'+id+'_plate'),
-    color: v('v'+id+'_color'), owner: v('v'+id+'_owner'), location: v('v'+id+'_location')
-  })).filter(vd => vd.year || vd.make || vd.model || vd.ins || vd.plate);
+    color: v('v'+id+'_color'), owner: v('v'+id+'_owner'), location: v('v'+id+'_location'),
+    claim: v('v'+id+'_claim'), belongs: v('v'+id+'_belongs')
+  })).filter(vd => vd.year || vd.make || vd.model || vd.ins || vd.plate || vd.claim || vd.belongs);
 
   if (vehicleData.length) {
     sec('Vehicles / Vehículos');
@@ -1559,10 +1585,11 @@ function generatePDF() {
       const vstr = [vd.year, vd.make, vd.model, vd.color].filter(Boolean).join(' · ');
       const lbl = vd.num === 1 ? 'V1 — Client / Cliente' : vd.num === 2 ? 'V2 — Other party / Tercero' : 'V'+vd.num+' — Additional';
       row([[lbl, vstr||'—'],['Insurance / Aseguradora', vd.ins||''],['Plate / Placa', vd.plate||'']]);
-      if(vd.owner) row([['Owner / Dueño', vd.owner]]);
+      if(vd.owner || vd.belongs) row([['Owner / Dueño', vd.owner||''],['Belongs to / Es de', vd.belongs||'']]);
+      if(vd.claim) row([['Claim # / Reclamo', vd.claim]]);
       const ab=getTog('v'+vd.id+'_airbags-tg');if(ab)row([['Airbags/Bolsas',ab]]);
       const towed=getTog('v'+vd.id+'_towed-tg');
-      if(towed) row([['Towed / Grúa', towed],['Car location / Ubicación', vd.location||'']]);
+      if(towed || vd.location) row([['Towed / Grúa', towed||''],['Car location / Ubicación', vd.location||'']]);
     });
   }
 
@@ -1788,6 +1815,7 @@ function renderCompanions() {
   // Setup address autocomplete for each companion
   companions.forEach(function(id) { setupArcGISAddressGroup(resolveAddrGroup('c' + id)); });
   companions.forEach(function(id) { updateCompanionAge(id); });
+  if (typeof applyA11yRoles === 'function') applyA11yRoles(list);
   if (typeof updateProgress === 'function') updateProgress();
 }
 
@@ -1949,7 +1977,7 @@ function renderDraftList() {
     const d = drafts[id], isActive = id === currentDraftId;
     const when = d.ts ? new Date(d.ts).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
     return `<span class="draft-slot${isActive?' active':''}" onclick="loadDraft('${id}')" title="${when ? 'Saved ' + when + ' — click to load' : 'Click to load'}">
-      ${d.label}
+      ${escapeHtml(d.label || '')}
       <span onclick="deleteDraft('${id}',event)" style="margin-left:6px;opacity:0.5;font-size:11px;" title="Delete">\u2715</span>
     </span>`;
   }).join('');
@@ -2036,6 +2064,7 @@ renderCompanions();
 syncThemeBtn();
 updateProgress();
 refreshAllDobAges();
+applyA11yRoles(document);
 
 // ============================================================
 // NEW FEATURES — efficiency helpers
@@ -2833,12 +2862,25 @@ function buildSummaryText() {
   lines.push('--- Vehicles ---');
   vehicles.forEach(function(id, idx) {
     var bits = [v('v' + id + '_year'), v('v' + id + '_make'), v('v' + id + '_model'), v('v' + id + '_plate')].filter(Boolean).join(' ');
-    if (bits) lines.push('V' + (idx + 1) + ': ' + bits + ' | Ins: ' + v('v' + id + '_ins') + ' | Loc: ' + v('v' + id + '_location'));
+    if (bits) {
+      var vline = 'V' + (idx + 1) + ': ' + bits + ' | Ins: ' + v('v' + id + '_ins') + ' | Loc: ' + v('v' + id + '_location');
+      if (v('v' + id + '_claim')) vline += ' | Claim: ' + v('v' + id + '_claim');
+      lines.push(vline);
+    }
   });
   if (companions.length) {
     lines.push('--- Companions / Acompañantes ---');
     companions.forEach(function(cid, cidx) {
-      lines.push('C' + (cidx + 1) + ': ' + v('c' + cid + '_name') + ' | ' + v('c' + cid + '_tel'));
+      var head = ['C' + (cidx + 1) + ': ' + (v('c' + cid + '_name') || '(no name / sin nombre)')];
+      if (v('c' + cid + '_dob')) head.push('DOB: ' + formatDate(v('c' + cid + '_dob')));
+      if (v('c' + cid + '_tel')) head.push(v('c' + cid + '_tel'));
+      if (v('c' + cid + '_email')) head.push(v('c' + cid + '_email'));
+      lines.push(head.join(' | '));
+      var cAddr = [v('c' + cid + '_address'), v('c' + cid + '_city'), v('c' + cid + '_state'), v('c' + cid + '_zip')].filter(Boolean).join(', ');
+      if (cAddr) lines.push('   Address: ' + cAddr);
+      var cInj = getChecked('c' + cid + '_body-zones');
+      if (cInj) lines.push('   Injuries: ' + cInj);
+      if (v('c' + cid + '_injury_notes')) lines.push('   Injury notes: ' + v('c' + cid + '_injury_notes'));
     });
   }
   lines.push('--- Notes ---');
@@ -2870,8 +2912,29 @@ document.addEventListener('input', function() {
 
 // Collapsible sections — click header to toggle
 function toggleSection(head) {
-  head.closest('.section').classList.toggle('collapsed');
+  var sec = head.closest('.section');
+  sec.classList.toggle('collapsed');
+  head.setAttribute('aria-expanded', sec.classList.contains('collapsed') ? 'false' : 'true');
 }
+
+// Keyboard accessibility — make click-only controls focusable + operable (Enter/Space)
+function applyA11yRoles(root) {
+  (root || document).querySelectorAll('.tog, .section-head, .lead-paste-head').forEach(function(el) {
+    if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '0');
+    if (!el.hasAttribute('role')) el.setAttribute('role', 'button');
+  });
+  (root || document).querySelectorAll('.section-head').forEach(function(head) {
+    var sec = head.closest('.section');
+    if (sec) head.setAttribute('aria-expanded', sec.classList.contains('collapsed') ? 'false' : 'true');
+  });
+}
+document.addEventListener('keydown', function(e) {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  var el = e.target;
+  if (!(el instanceof Element) || !el.matches('.tog, .section-head, .lead-paste-head')) return;
+  e.preventDefault();
+  el.click();
+});
 
 // Section fill indicators — green dot when section has any data
 function updateFillDots() {
