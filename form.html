@@ -305,7 +305,7 @@
     <div>
       <div class="header-title">Auto Accident Intake Form</div>
       <div class="header-sub">Personal Injury · Accidente de Auto</div>
-      <span class="form-version">Intake v2.1 · Jun 2026 · lead+companions</span>
+      <span class="form-version" id="form-version" data-build="2026-06-10.4">Intake v2.2 · Jun 2026 · auto-update</span>
     </div>
     <div class="header-date">
       <div id="hdate"></div>
@@ -2185,6 +2185,43 @@ setInterval(() => { if (currentDraftId) saveDraft(); }, 30000);
       if (val) localStorage.setItem('intake_firm_default', val);
     });
   } catch (e) {}
+})();
+
+/* ── Auto-update: never serve a stale form again ──
+   Periodically fetches the live page (cache bypassed) and compares builds.
+   On mismatch, shows an "Update" banner; clicking it saves the draft and
+   reloads with a cache-busting query. */
+(function autoUpdateCheck() {
+  var myBuild = (document.getElementById('form-version') || {}).getAttribute
+    ? document.getElementById('form-version').getAttribute('data-build') : null;
+  if (!myBuild || location.protocol === 'file:') return;
+
+  function check() {
+    fetch(location.pathname + '?update_check=' + Date.now(), { cache: 'no-store' })
+      .then(function(r) { return r.text(); })
+      .then(function(html) {
+        var m = html.match(/data-build="([^"]+)"/);
+        if (m && m[1] !== myBuild) showUpdateBanner();
+      })
+      .catch(function() {});
+  }
+
+  function showUpdateBanner() {
+    if (document.getElementById('update-banner')) return;
+    var b = document.createElement('button');
+    b.id = 'update-banner';
+    b.type = 'button';
+    b.textContent = '\u27f3 New version \u2014 tap to update / Nueva versi\u00f3n \u2014 actualizar';
+    b.style.cssText = 'position:fixed;bottom:74px;left:50%;transform:translateX(-50%);z-index:450;background:var(--accent);color:#fff;border:none;border-radius:999px;padding:10px 18px;font-size:13px;font-weight:600;font-family:inherit;box-shadow:0 8px 28px rgba(0,0,0,0.25);cursor:pointer;max-width:92vw;';
+    b.onclick = function() {
+      try { if (typeof currentDraftId !== 'undefined' && currentDraftId) saveDraft(); } catch (e) {}
+      location.replace(location.pathname + '?v=' + Date.now());
+    };
+    document.body.appendChild(b);
+  }
+
+  setTimeout(check, 4000);
+  setInterval(check, 5 * 60 * 1000);
 })();
 
 // Never block refresh/close: silently save work instead.
