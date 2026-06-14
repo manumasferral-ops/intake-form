@@ -305,7 +305,7 @@
     <div>
       <div class="header-title">Auto Accident Intake Form</div>
       <div class="header-sub">Personal Injury · Accidente de Auto</div>
-      <span class="form-version" id="form-version" data-build="2026-06-10.4">Intake v2.2 · Jun 2026 · auto-update</span>
+      <span class="form-version" id="form-version" data-build="2026-06-14.1">Intake v2.3 · Jun 2026 · client vehicle</span>
     </div>
     <div class="header-date">
       <div id="hdate"></div>
@@ -544,6 +544,18 @@
             <option>Driver / Conductor</option>
             <option>Passenger / Pasajero</option>
             <option>Pedestrian / Peatón</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Client is vehicle <span class="es">/ El cliente es el vehículo</span></label>
+          <select id="client_vehicle">
+            <option value="">— Select —</option>
+            <option value="V1">V1</option>
+            <option value="V2">V2</option>
+            <option value="V3">V3</option>
+            <option value="V4">V4</option>
+            <option value="V5">V5</option>
+            <option value="N/A">N/A — Pedestrian / Peatón</option>
           </select>
         </div>
       </div>
@@ -1686,7 +1698,7 @@ function generatePDF() {
   row([['Case type / Tipo de caso', getTog('casetype-tg')]]);
   sec('Case Info / Información del Caso');
   row([['Source / Fuente',v('source')],['Date of Loss',formatDate(v('dol'))],['Time / Hora',formatTime(v('dol_time'))]]);
-  row([['Fault / Responsabilidad',v('fault')],['Client position',v('position')]]);
+  row([['Fault / Responsabilidad',v('fault')],['Client position',v('position')],['Client is / Cliente es',v('client_vehicle')]]);
   const policeVal = getTog('police-tg') + (v('police_report_num') ? ' — Report #: '+v('police_report_num') : '');
   row([['Police / Policía', policeVal],['Rideshare',getTog('rideshare-tg')]]);
   row([['State of accident / Estado',v('accident_state')]]);
@@ -1723,9 +1735,11 @@ function generatePDF() {
 
   if (vehicleData.length) {
     sec('Vehicles / Vehículos');
+    const clientVeh = v('client_vehicle');
     vehicleData.forEach(vd => {
       const vstr = [vd.year, vd.make, vd.model, vd.color].filter(Boolean).join(' · ');
-      const lbl = vd.num === 1 ? 'V1 — Client / Cliente' : vd.num === 2 ? 'V2 — Other party / Tercero' : 'V'+vd.num+' — Additional';
+      const tag = 'V'+vd.num;
+      const lbl = tag + (clientVeh === tag ? ' — Client / Cliente' : '');
       row([[lbl, vstr||'—'],['Insurance / Aseguradora', vd.ins||''],['Plate / Placa', vd.plate||'']]);
       if(vd.owner || vd.belongs) row([['Owner / Dueño', vd.owner||''],['Belongs to / Es de', vd.belongs||'']]);
       if(vd.claim) row([['Claim # / Reclamo', vd.claim]]);
@@ -3034,7 +3048,7 @@ function buildSummaryText() {
   }
   lines.push('--- Case / Caso ---');
   lines.push('DOL: ' + formatDate(v('dol')) + ' @ ' + formatTime(v('dol_time')));
-  lines.push('Accident state: ' + v('accident_state') + ' | Fault: ' + v('fault') + ' | Position: ' + v('position'));
+  lines.push('Accident state: ' + v('accident_state') + ' | Fault: ' + v('fault') + ' | Position: ' + v('position') + (v('client_vehicle') ? ' | Client is: ' + v('client_vehicle') : ''));
   lines.push('Police: ' + getTog('police-tg') + (v('police_report_num') ? ' #' + v('police_report_num') : '') + ' | Rideshare: ' + getTog('rideshare-tg'));
   if (v('description')) {
     lines.push('Description (original): ' + v('description'));
