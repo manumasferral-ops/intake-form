@@ -305,7 +305,7 @@
     <div>
       <div class="header-title">Auto Accident Intake Form</div>
       <div class="header-sub">Personal Injury · Accidente de Auto</div>
-      <span class="form-version" id="form-version" data-build="2026-06-14.5">Intake v2.4 · Jun 2026 · client vehicle toggle</span>
+      <span class="form-version" id="form-version" data-build="2026-06-14.6">Intake v2.5 · Jun 2026 · client banner</span>
     </div>
     <div class="header-date">
       <div id="hdate"></div>
@@ -1695,10 +1695,20 @@ function generatePDF() {
   const firm = v('firm');
   hdr('Auto Accident Intake Form', (firm ? firm+' · ' : '')+'Personal Injury · '+new Date().toLocaleDateString('en-US'));
 
+  // Prominent client-vehicle banner at the very top of the PDF
+  const clientV = getTog('client_vehicle-tg');
+  if (clientV) {
+    chk();
+    doc.setFillColor(20,20,18); doc.roundedRect(M, y-5, CW, 10, 2, 2, 'F');
+    doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.setTextColor(255,255,255);
+    doc.text('CLIENT / CLIENTE: ' + clientV, M+4, y+1.5);
+    y += 13;
+  }
+
   row([['Case type / Tipo de caso', getTog('casetype-tg')]]);
   sec('Case Info / Información del Caso');
   row([['Source / Fuente',v('source')],['Date of Loss',formatDate(v('dol'))],['Time / Hora',formatTime(v('dol_time'))]]);
-  row([['Fault / Responsabilidad',v('fault')],['Client position',v('position')],['Client is / Cliente es',getTog('client_vehicle-tg')]]);
+  row([['Fault / Responsabilidad',v('fault')],['Client position',v('position')]]);
   const policeVal = getTog('police-tg') + (v('police_report_num') ? ' — Report #: '+v('police_report_num') : '');
   row([['Police / Policía', policeVal],['Rideshare',getTog('rideshare-tg')]]);
   row([['State of accident / Estado',v('accident_state')]]);
