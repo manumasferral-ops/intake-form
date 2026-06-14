@@ -305,7 +305,7 @@
     <div>
       <div class="header-title">Auto Accident Intake Form</div>
       <div class="header-sub">Personal Injury · Accidente de Auto</div>
-      <span class="form-version" id="form-version" data-build="2026-06-14.2">Intake v2.3 · Jun 2026 · client vehicle</span>
+      <span class="form-version" id="form-version" data-build="2026-06-14.3">Intake v2.3 · Jun 2026 · client vehicle</span>
     </div>
     <div class="header-date">
       <div id="hdate"></div>
@@ -551,7 +551,7 @@
           <select id="client_vehicle">
             <option value="">— Select —</option>
             <option value="V1">V1</option>
-            <option value="V2">V2</option>
+            <option value="V2" selected>V2</option>
             <option value="V3">V3</option>
             <option value="V4">V4</option>
             <option value="V5">V5</option>
@@ -2058,6 +2058,12 @@ function applyFormData(data) {
   try {
     const firmEl = document.getElementById('firm');
     if (firmEl && !firmEl.value) { const fd = localStorage.getItem('intake_firm_default'); if (fd) firmEl.value = fd; }
+  } catch (e) {}
+  // Default client vehicle to V2 (standard) when an older draft didn't store it,
+  // so it always prints on the PDF; user can change it for client-at-fault cases.
+  try {
+    const cv = document.getElementById('client_vehicle');
+    if (cv && !cv.value) cv.value = 'V2';
   } catch (e) {}
   Object.keys(data.toggles || {}).forEach(gid => {
     const val = data.toggles[gid]; if (!val) return;
