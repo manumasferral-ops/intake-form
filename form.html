@@ -305,7 +305,7 @@
     <div>
       <div class="header-title">Auto Accident Intake Form</div>
       <div class="header-sub">Personal Injury · Accidente de Auto</div>
-      <span class="form-version" id="form-version" data-build="2026-06-14.1">Intake v2.3 · Jun 2026 · client vehicle</span>
+      <span class="form-version" id="form-version" data-build="2026-06-14.2">Intake v2.3 · Jun 2026 · client vehicle</span>
     </div>
     <div class="header-date">
       <div id="hdate"></div>
@@ -2046,7 +2046,19 @@ function applyFormData(data) {
   if (!data) return;
   vehicles = data.vehicles || []; vCounter = data.vCounter || 0; renderVehicles();
   companions = data.companions || []; cCounter = data.cCounter || 0; renderCompanions();
-  Object.keys(data.fields || {}).forEach(id => { const el = document.getElementById(id); if (el) el.value = data.fields[id]; });
+  // Reset every single-value field first, then apply the draft's values.
+  // This keeps OLD drafts (saved before newer fields like client_vehicle existed)
+  // from inheriting a stale value left over from a previously loaded draft.
+  const df = data.fields || {};
+  document.querySelectorAll('input:not([type=checkbox]):not([type=file]), textarea, select').forEach(el => {
+    if (!el.id) return;
+    el.value = (df[el.id] != null) ? df[el.id] : '';
+  });
+  // Preserve the saved law-firm default if this (older) draft didn't store one
+  try {
+    const firmEl = document.getElementById('firm');
+    if (firmEl && !firmEl.value) { const fd = localStorage.getItem('intake_firm_default'); if (fd) firmEl.value = fd; }
+  } catch (e) {}
   Object.keys(data.toggles || {}).forEach(gid => {
     const val = data.toggles[gid]; if (!val) return;
     document.querySelectorAll('#'+gid+' .tog').forEach(t => t.classList.toggle('active', t.textContent.trim() === val));
