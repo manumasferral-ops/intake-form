@@ -305,7 +305,7 @@
     <div>
       <div class="header-title">Auto Accident Intake Form</div>
       <div class="header-sub">Personal Injury · Accidente de Auto</div>
-      <span class="form-version" id="form-version" data-build="2026-06-14.3">Intake v2.3 · Jun 2026 · client vehicle</span>
+      <span class="form-version" id="form-version" data-build="2026-06-14.4">Intake v2.4 · Jun 2026 · client vehicle toggle</span>
     </div>
     <div class="header-date">
       <div id="hdate"></div>
@@ -548,15 +548,14 @@
         </div>
         <div class="field">
           <label>Client is vehicle <span class="es">/ El cliente es el vehículo</span></label>
-          <select id="client_vehicle">
-            <option value="">— Select —</option>
-            <option value="V1">V1</option>
-            <option value="V2" selected>V2</option>
-            <option value="V3">V3</option>
-            <option value="V4">V4</option>
-            <option value="V5">V5</option>
-            <option value="N/A">N/A — Pedestrian / Peatón</option>
-          </select>
+          <div class="toggle-group" id="client_vehicle-tg">
+            <div class="tog" onclick="tog(this,'client_vehicle-tg')">V1</div>
+            <div class="tog active" onclick="tog(this,'client_vehicle-tg')">V2</div>
+            <div class="tog" onclick="tog(this,'client_vehicle-tg')">V3</div>
+            <div class="tog" onclick="tog(this,'client_vehicle-tg')">V4</div>
+            <div class="tog" onclick="tog(this,'client_vehicle-tg')">V5</div>
+            <div class="tog" onclick="tog(this,'client_vehicle-tg')">N/A</div>
+          </div>
         </div>
       </div>
       <div class="grid-2 gap-top">
@@ -1698,7 +1697,7 @@ function generatePDF() {
   row([['Case type / Tipo de caso', getTog('casetype-tg')]]);
   sec('Case Info / Información del Caso');
   row([['Source / Fuente',v('source')],['Date of Loss',formatDate(v('dol'))],['Time / Hora',formatTime(v('dol_time'))]]);
-  row([['Fault / Responsabilidad',v('fault')],['Client position',v('position')],['Client is / Cliente es',v('client_vehicle')]]);
+  row([['Fault / Responsabilidad',v('fault')],['Client position',v('position')],['Client is / Cliente es',getTog('client_vehicle-tg')]]);
   const policeVal = getTog('police-tg') + (v('police_report_num') ? ' — Report #: '+v('police_report_num') : '');
   row([['Police / Policía', policeVal],['Rideshare',getTog('rideshare-tg')]]);
   row([['State of accident / Estado',v('accident_state')]]);
@@ -1735,7 +1734,7 @@ function generatePDF() {
 
   if (vehicleData.length) {
     sec('Vehicles / Vehículos');
-    const clientVeh = v('client_vehicle');
+    const clientVeh = getTog('client_vehicle-tg');
     vehicleData.forEach(vd => {
       const vstr = [vd.year, vd.make, vd.model, vd.color].filter(Boolean).join(' · ');
       const tag = 'V'+vd.num;
@@ -2059,11 +2058,16 @@ function applyFormData(data) {
     const firmEl = document.getElementById('firm');
     if (firmEl && !firmEl.value) { const fd = localStorage.getItem('intake_firm_default'); if (fd) firmEl.value = fd; }
   } catch (e) {}
-  // Default client vehicle to V2 (standard) when an older draft didn't store it,
-  // so it always prints on the PDF; user can change it for client-at-fault cases.
+  // Reset client-vehicle toggle to the V2 default before applying the draft's
+  // own toggles below. This both clears any stale value from a prior draft and
+  // gives older drafts (saved before this field existed) the standard V2, so it
+  // always prints on the PDF. The toggle loop below overrides it when the draft
+  // stored an explicit choice (V1/V3/N\/A...).
   try {
-    const cv = document.getElementById('client_vehicle');
-    if (cv && !cv.value) cv.value = 'V2';
+    const cvg = document.getElementById('client_vehicle-tg');
+    if (cvg) {
+      cvg.querySelectorAll('.tog').forEach(t => t.classList.toggle('active', t.textContent.trim() === 'V2'));
+    }
   } catch (e) {}
   Object.keys(data.toggles || {}).forEach(gid => {
     const val = data.toggles[gid]; if (!val) return;
@@ -3066,7 +3070,7 @@ function buildSummaryText() {
   }
   lines.push('--- Case / Caso ---');
   lines.push('DOL: ' + formatDate(v('dol')) + ' @ ' + formatTime(v('dol_time')));
-  lines.push('Accident state: ' + v('accident_state') + ' | Fault: ' + v('fault') + ' | Position: ' + v('position') + (v('client_vehicle') ? ' | Client is: ' + v('client_vehicle') : ''));
+  lines.push('Accident state: ' + v('accident_state') + ' | Fault: ' + v('fault') + ' | Position: ' + v('position') + (getTog('client_vehicle-tg') ? ' | Client is: ' + getTog('client_vehicle-tg') : ''));
   lines.push('Police: ' + getTog('police-tg') + (v('police_report_num') ? ' #' + v('police_report_num') : '') + ' | Rideshare: ' + getTog('rideshare-tg'));
   if (v('description')) {
     lines.push('Description (original): ' + v('description'));
