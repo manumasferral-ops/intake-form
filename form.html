@@ -305,7 +305,7 @@
     <div>
       <div class="header-title">Auto Accident Intake Form</div>
       <div class="header-sub">Personal Injury · Accidente de Auto</div>
-      <span class="form-version" id="form-version" data-build="2026-06-14.6">Intake v2.5 · Jun 2026 · client banner</span>
+      <span class="form-version" id="form-version" data-build="2026-06-14.7">Intake v2.5 · Jun 2026 · V1/V2 desc fix</span>
     </div>
     <div class="header-date">
       <div id="hdate"></div>
@@ -1498,13 +1498,13 @@ function v12Convert(raw) {
   else if (/copiloto|pasajero|passenger side/.test(t)) side = 'passenger side';
   else if (/parte izquierda|lado izquierdo|left side/.test(t)) side = 'left side';
   else if (/parte derecha|lado derecho|right side/.test(t)) side = 'right side';
-  else if (/bumper (delantero|de adelante)|parte (de adelante|delantera)|por delante|de frente|front bumper|the front/.test(t)) side = 'front';
+  else if (/bumper frontal|frontal bumper|bumper (delantero|de adelante)|parte (de adelante|delantera)|por delante|de frente|front bumper|the front/.test(t)) side = 'front';
 
   var rearHit = /(por|en) (la parte de )?atras|por detras|parte trasera|puerta trasera|rear.?end|rearen|por la parte trasera/.test(t);
 
   // ── V1 (at-fault) action ──
   var act = '';
-  if (/se salta (el|la|su) (semaforo|luz)|luz (en )?rojo para el|se paso (el|la) (luz|semaforo)|ran (a|the) red light/.test(t)) act = 'ranRed';
+  if (/se salta (el|la|su) (semaforo|luz)|luz (en )?rojo|se paso (el|la) (luz|semaforo)|ran (a|the) red light/.test(t)) act = 'ranRed';
   else if (/se salta (el|su|un) stop|no (hizo|hace) (un|el|su) stop|no se detiene en (el|su) stop|no respeto (el|su) stop|ran a stop sign|failed to stop/.test(t)) act = 'ranStop';
   else if (/invade|invadio|le invadi/.test(t)) act = 'invade';
   else if (/cambi(ar|ando|o) de (carril|canal|linea)/.test(t)) act = 'laneChange';
@@ -1527,7 +1527,8 @@ function v12Convert(raw) {
   else if (/(reduciendo|bajando|bajar) la velocidad|empezo a reducir|slowing down/.test(t)) scene = 'slowing down';
   else if (/mucho trafico|heavy traffic/.test(t)) scene = 'moving in heavy traffic';
   else if (/saliendo de (la autopista|el highway|el freeway)|exiting the (highway|freeway)/.test(t)) scene = 'exiting the highway';
-  else if (/(haciendo|hacer|queria hacer) una? derecha|making a right/.test(t) && act !== 'reverse') scene = 'making a right turn';
+  else if (/(doblando|doblar|giro|girando|haciendo|intentando|queria).{0,18}(izquierda|izquiera)|turning left|left turn/.test(t)) scene = 'making a left turn';
+  else if (/(doblando|doblar|giro|girando|haciendo|intentando|queria).{0,18}derecha|turning right|making a right/.test(t)) scene = 'making a right turn';
   else if (/iba por su (via|linea|carril|senda)|va por su (via|carril)|iba manejando|iba en su (via|carril)|on (his|her) lane|in (his|her) lane|transitaba|circulaba/.test(t)) scene = 'traveling in ' + pron + ' lane';
   else if (/en movimiento|in motion/.test(t)) scene = 'in motion';
   else if (/estaba(n)? (parad|detenid)|was stopped/.test(t)) scene = 'stopped';
@@ -1545,7 +1546,8 @@ function v12Convert(raw) {
   }
   if (act === 'ranRed') {
     var sc = scene || ('traveling in ' + pron + ' lane');
-    return 'V2 was ' + sc + ' when V1 ran a red light and impacted the ' + (side || 'side') + ' of V2\u2019s vehicle.';
+    var hit = side === 'front' ? 'front bumper' : (side ? side : 'side');
+    return 'V2 was ' + sc + ' when V1 ran a red light and impacted the ' + hit + ' of V2\u2019s vehicle.';
   }
   if (act === 'ranStop') {
     if (side) return 'V1 ran a stop sign and impacted the ' + side + ' of V2\u2019s vehicle.';
