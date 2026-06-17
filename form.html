@@ -328,7 +328,7 @@
     <div>
       <div class="header-title">Auto Accident Intake Form</div>
       <div class="header-sub">Personal Injury · Accidente de Auto</div>
-      <span class="form-version" id="form-version" data-build="2026-06-15.2">Intake v2.6.1 · Jun 2026 · MAN state cluster</span>
+      <span class="form-version" id="form-version" data-build="2026-06-15.3">Intake v2.6.2 · Jun 2026 · MAN col G state</span>
     </div>
     <div class="header-date">
       <div id="hdate"></div>
@@ -3209,12 +3209,20 @@ function manTodayMMDDYYYY() {
   return mm + '/' + dd + '/' + d.getFullYear();
 }
 
-function manAccidentStateAbbr() {
-  var raw = v('accident_state') || v('state') || '';
-  var m = String(raw).match(/\(([A-Z]{2})\)/i);
-  if (m) return m[1].toUpperCase();
-  var st = String(raw).trim().toUpperCase();
-  return /^[A-Z]{2}$/.test(st) ? st : '';
+function manAccidentStateName() {
+  var raw = v('accident_state') || '';
+  if (raw) {
+    var m = String(raw).match(/^(.+?)\s*\([A-Z]{2}\)$/i);
+    if (m) return manUpper(m[1].trim());
+    return manUpper(raw);
+  }
+  var abbr = String(v('state') || '').trim().toUpperCase();
+  if (abbr && typeof STATE_MAP !== 'undefined') {
+    for (var sn in STATE_MAP) {
+      if (STATE_MAP[sn] === abbr) return manUpper(sn);
+    }
+  }
+  return '';
 }
 
 function buildManSheetData() {
@@ -3233,7 +3241,7 @@ function buildManSheetData() {
     D: { val: nm.last, label: 'last name' },
     E: { val: manUpper(v('source')), label: 'source' },
     F: { val: formatDate(v('dol')), label: 'DOA' },
-    G: { val: manUpper(v('city')), label: 'city' },
+    G: { val: manAccidentStateName(), label: 'state' },
     H: { val: 'MVA', auto: true, label: 'MVA' },
     I: { val: 'MANUELITO', auto: true, label: 'MANUELITO' },
     J: { val: clinic, label: 'clinic' },
@@ -3250,15 +3258,14 @@ function manSheetSentenceText() {
   if (data.C.val || data.D.val) parts.push(((data.C.val || '—') + ' ' + (data.D.val || '')).trim());
   if (data.E.val) parts.push('source ' + data.E.val);
   if (data.F.val) parts.push('accident ' + data.F.val);
-  if (data.G.val) parts.push('city ' + data.G.val);
+  if (data.G.val) parts.push('state ' + data.G.val);
   parts.push('MVA', 'MANUELITO');
   if (data.J.val) parts.push('clinic ' + data.J.val);
   if (data.K.val) parts.push(data.K.val);
   parts.push('YES');
   if (data.M.val) parts.push('client ' + data.M.val);
-  var stateAbbr = manAccidentStateAbbr();
   var sentence = parts.join(', ') + '.';
-  sentence += ' Column A: next seq # in ' + (stateAbbr || 'state') + ' cluster.';
+  sentence += ' Column A: next seq # in ' + (data.G.val || 'state') + ' cluster.';
   sentence += ' Column N: leave blank.';
   return sentence;
 }
@@ -3300,8 +3307,7 @@ function renderManSheetPreview() {
     if (!data.C.val || !data.D.val) msgs.push('Name missing / Falta nombre');
     if (!data.E.val) msgs.push('Source missing / Falta fuente');
     if (!data.F.val) msgs.push('DOA missing / Falta fecha accidente');
-    if (!data.G.val) msgs.push('City missing / Falta ciudad');
-    if (!manAccidentStateAbbr()) msgs.push('Accident state missing — for column A cluster / Falta estado del accidente');
+    if (!data.G.val) msgs.push('State missing (column G) — set accident state / Falta estado');
     if (!data.J.val) msgs.push('Clinic (J) missing — enter above / Falta clínica');
     if (!data.M.val) {
       var cv = getTog('client_vehicle-tg');
