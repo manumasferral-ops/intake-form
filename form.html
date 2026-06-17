@@ -328,7 +328,7 @@
     <div>
       <div class="header-title">Auto Accident Intake Form</div>
       <div class="header-sub">Personal Injury · Accidente de Auto</div>
-      <span class="form-version" id="form-version" data-build="2026-06-15.1">Intake v2.6 · Jun 2026 · MAN sheet copy</span>
+      <span class="form-version" id="form-version" data-build="2026-06-15.2">Intake v2.6.1 · Jun 2026 · MAN state cluster</span>
     </div>
     <div class="header-date">
       <div id="hdate"></div>
@@ -3209,6 +3209,14 @@ function manTodayMMDDYYYY() {
   return mm + '/' + dd + '/' + d.getFullYear();
 }
 
+function manAccidentStateAbbr() {
+  var raw = v('accident_state') || v('state') || '';
+  var m = String(raw).match(/\(([A-Z]{2})\)/i);
+  if (m) return m[1].toUpperCase();
+  var st = String(raw).trim().toUpperCase();
+  return /^[A-Z]{2}$/.test(st) ? st : '';
+}
+
 function buildManSheetData() {
   var nm = manSplitName(v('name'));
   var clientV = getTog('client_vehicle-tg');
@@ -3219,7 +3227,7 @@ function buildManSheetData() {
   var clinic = clinicRaw ? manUpper(clinicRaw) : '';
   var lang = getTog('man_lang-tg') || 'SPANISH';
   return {
-    A: { val: '', note: true, label: 'seq # in city cluster / # en grupo ciudad' },
+    A: { val: '', note: true, label: 'seq # in state cluster / # en grupo estado' },
     B: { val: manTodayMMDDYYYY(), auto: true, label: 'signup date' },
     C: { val: nm.first, label: 'first name' },
     D: { val: nm.last, label: 'last name' },
@@ -3248,8 +3256,9 @@ function manSheetSentenceText() {
   if (data.K.val) parts.push(data.K.val);
   parts.push('YES');
   if (data.M.val) parts.push('client ' + data.M.val);
+  var stateAbbr = manAccidentStateAbbr();
   var sentence = parts.join(', ') + '.';
-  sentence += ' Column A: next seq # in ' + (data.G.val || 'city') + ' cluster.';
+  sentence += ' Column A: next seq # in ' + (stateAbbr || 'state') + ' cluster.';
   sentence += ' Column N: leave blank.';
   return sentence;
 }
@@ -3292,6 +3301,7 @@ function renderManSheetPreview() {
     if (!data.E.val) msgs.push('Source missing / Falta fuente');
     if (!data.F.val) msgs.push('DOA missing / Falta fecha accidente');
     if (!data.G.val) msgs.push('City missing / Falta ciudad');
+    if (!manAccidentStateAbbr()) msgs.push('Accident state missing — for column A cluster / Falta estado del accidente');
     if (!data.J.val) msgs.push('Clinic (J) missing — enter above / Falta clínica');
     if (!data.M.val) {
       var cv = getTog('client_vehicle-tg');
