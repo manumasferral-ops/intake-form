@@ -235,6 +235,29 @@
   .lead-paste.open .lead-paste-body { display: block; }
   .lead-paste textarea { min-height: 72px; font-size: 13px; }
   .lead-paste-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+
+  /* MAN week sheet copy panel */
+  .man-sheet-wrap { margin-bottom: 1rem; display: none; }
+  .man-sheet-wrap.show { display: block; }
+  .man-sheet { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .man-sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; cursor: pointer; user-select: none; border-bottom: 1px solid var(--border); }
+  .man-sheet-head span { font-size: 13px; font-weight: 600; color: var(--text); }
+  .man-sheet-body { padding: 12px 14px 14px; display: none; }
+  .man-sheet.open .man-sheet-body { display: block; }
+  .man-sheet-hint { font-size: 11px; color: var(--text3); margin-bottom: 10px; line-height: 1.45; }
+  .man-sheet-sentence-label { font-size: 11px; font-weight: 600; color: var(--text2); margin-bottom: 4px; }
+  .man-sheet-sentence { width: 100%; min-height: 56px; font-family: 'DM Sans', sans-serif; font-size: 13px; line-height: 1.5; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); resize: vertical; margin-bottom: 12px; }
+  .man-sheet-sentence:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .man-sheet-grid { display: grid; grid-template-columns: 36px 1fr; gap: 4px 10px; font-family: 'DM Mono', monospace; font-size: 12px; margin-bottom: 12px; }
+  .man-sheet-grid .col-lbl { color: var(--text3); font-weight: 600; }
+  .man-sheet-grid .col-val { color: var(--text); word-break: break-word; }
+  .man-sheet-grid .col-val.auto { color: var(--accent); }
+  .man-sheet-grid .col-val.missing { color: var(--danger); font-style: italic; }
+  .man-sheet-grid .col-val.note { color: var(--text3); font-style: italic; }
+  .man-sheet-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .man-sheet-warn { font-size: 11px; color: var(--danger); margin-top: 8px; display: none; }
+  .man-sheet-warn.show { display: block; }
+  #btn-toggle-man.active { background: var(--accent-bg); border-color: var(--accent-border); color: var(--accent); font-weight: 600; }
   .shortcut-modal { position: fixed; inset: 0; z-index: 600; background: rgba(0,0,0,0.35); display: none; align-items: center; justify-content: center; padding: 1rem; }
   .shortcut-modal.show { display: flex; }
   .shortcut-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); max-width: 420px; width: 100%; padding: 18px; box-shadow: 0 12px 40px rgba(0,0,0,0.15); }
@@ -305,7 +328,7 @@
     <div>
       <div class="header-title">Auto Accident Intake Form</div>
       <div class="header-sub">Personal Injury · Accidente de Auto</div>
-      <span class="form-version" id="form-version" data-build="2026-06-14.7">Intake v2.5 · Jun 2026 · V1/V2 desc fix</span>
+      <span class="form-version" id="form-version" data-build="2026-06-15.1">Intake v2.6 · Jun 2026 · MAN sheet copy</span>
     </div>
     <div class="header-date">
       <div id="hdate"></div>
@@ -394,7 +417,43 @@
         <button class="btn" onclick="newDraft()" style="padding:6px 14px;font-size:13px;">New / Nuevo</button>
         <button class="btn" onclick="exportDrafts()" style="padding:6px 14px;font-size:13px;" title="Download backup JSON">Export</button>
         <button class="btn" onclick="document.getElementById('draft-import-file').click()" style="padding:6px 14px;font-size:13px;" title="Restore from backup JSON">Import</button>
+        <button type="button" class="btn" id="btn-toggle-man" onclick="toggleManSheetPanel()" style="padding:6px 14px;font-size:13px;" title="Show MAN week sheet copy block / Mostrar hoja MAN">📊 MAN sheet</button>
         <input type="file" id="draft-import-file" accept="application/json,.json" onchange="importDraftsFile(this)">
+      </div>
+    </div>
+  </div>
+
+  <!-- MAN week sheet — toggle with 📊 MAN sheet button above -->
+  <div class="man-sheet-wrap" id="man-sheet-wrap">
+    <div class="man-sheet open" id="man-sheet">
+      <div class="man-sheet-head" onclick="document.getElementById('man-sheet').classList.toggle('open')">
+        <span>📊 MAN week sheet / Hoja MAN (columns A–M)</span>
+        <span class="section-chevron" style="transform:none;">▾</span>
+      </div>
+      <div class="man-sheet-body">
+        <p class="man-sheet-hint">Copy into your MAN tab — one value per cell (A–M). Source (E) is exactly what you typed in the form. Clinic (J) is only what you type below — never the Hospital name from Medical. Column N stays blank. H, I, L auto-fill.</p>
+        <div class="grid-2 gap-top" style="margin-bottom:10px;">
+          <div class="field">
+            <label>Language / Idioma <span class="es">(column K)</span></label>
+            <div class="toggle-group" id="man_lang-tg">
+              <div class="tog active" onclick="tog(this,'man_lang-tg'); renderManSheetPreview()">SPANISH</div>
+              <div class="tog" onclick="tog(this,'man_lang-tg'); renderManSheetPreview()">ENGLISH</div>
+            </div>
+          </div>
+          <div class="field">
+            <label>Clinic / Clínica <span class="es">(column J — you enter this)</span></label>
+            <input type="text" id="man_clinic" placeholder="Clinic name for column J" oninput="renderManSheetPreview()">
+          </div>
+        </div>
+        <div class="man-sheet-sentence-label">Sentence / Oración — tap to select all, then copy</div>
+        <textarea class="man-sheet-sentence" id="man-sheet-sentence" readonly onclick="this.select()" aria-label="MAN sheet sentence"></textarea>
+        <div class="man-sheet-grid" id="man-sheet-grid" aria-live="polite"></div>
+        <div class="man-sheet-warn" id="man-sheet-warn"></div>
+        <div class="man-sheet-actions">
+          <button type="button" class="btn btn-primary" onclick="copyManSheetSentence()">Copy sentence / Copiar oración</button>
+          <button type="button" class="btn" onclick="copyManSheetLabeled()">Copy columns A–M</button>
+          <button type="button" class="btn" onclick="copyManSheetTabRow()">Copy B–M (Tab)</button>
+        </div>
       </div>
     </div>
   </div>
@@ -2304,6 +2363,7 @@ syncThemeBtn();
 updateProgress();
 refreshAllDobAges();
 applyA11yRoles(document);
+try { setManSheetVisible(localStorage.getItem('intake_man_sheet_visible') === '1', false); } catch (e) {}
 
 // ============================================================
 // NEW FEATURES — efficiency helpers
@@ -3130,6 +3190,162 @@ function buildSummaryText() {
   return lines.join('\n');
 }
 
+/* ── MAN week sheet (columns A–M) ── */
+function manUpper(s) {
+  return String(s || '').trim().toUpperCase();
+}
+
+function manSplitName(full) {
+  var parts = String(full || '').trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return { first: '', last: '' };
+  if (parts.length === 1) return { first: manUpper(parts[0]), last: '' };
+  return { first: manUpper(parts[0]), last: manUpper(parts.slice(1).join(' ')) };
+}
+
+function manTodayMMDDYYYY() {
+  var d = new Date();
+  var mm = String(d.getMonth() + 1).padStart(2, '0');
+  var dd = String(d.getDate()).padStart(2, '0');
+  return mm + '/' + dd + '/' + d.getFullYear();
+}
+
+function buildManSheetData() {
+  var nm = manSplitName(v('name'));
+  var clientV = getTog('client_vehicle-tg');
+  var mCol = /^V[123]$/.test(clientV) ? clientV : '';
+  // Column J: clinic only from #man_clinic — never #hospital (ER/hospital ≠ injury clinic).
+  var clinicEl = document.getElementById('man_clinic');
+  var clinicRaw = clinicEl && clinicEl.value.trim();
+  var clinic = clinicRaw ? manUpper(clinicRaw) : '';
+  var lang = getTog('man_lang-tg') || 'SPANISH';
+  return {
+    A: { val: '', note: true, label: 'seq # in city cluster / # en grupo ciudad' },
+    B: { val: manTodayMMDDYYYY(), auto: true, label: 'signup date' },
+    C: { val: nm.first, label: 'first name' },
+    D: { val: nm.last, label: 'last name' },
+    E: { val: manUpper(v('source')), label: 'source' },
+    F: { val: formatDate(v('dol')), label: 'DOA' },
+    G: { val: manUpper(v('city')), label: 'city' },
+    H: { val: 'MVA', auto: true, label: 'MVA' },
+    I: { val: 'MANUELITO', auto: true, label: 'MANUELITO' },
+    J: { val: clinic, label: 'clinic' },
+    K: { val: lang, label: 'language' },
+    L: { val: 'YES', auto: true, label: 'YES' },
+    M: { val: mCol, label: 'client vehicle V1/V2/V3' }
+  };
+}
+
+function manSheetSentenceText() {
+  var data = buildManSheetData();
+  var parts = [];
+  if (data.B.val) parts.push('signup ' + data.B.val);
+  if (data.C.val || data.D.val) parts.push(((data.C.val || '—') + ' ' + (data.D.val || '')).trim());
+  if (data.E.val) parts.push('source ' + data.E.val);
+  if (data.F.val) parts.push('accident ' + data.F.val);
+  if (data.G.val) parts.push('city ' + data.G.val);
+  parts.push('MVA', 'MANUELITO');
+  if (data.J.val) parts.push('clinic ' + data.J.val);
+  if (data.K.val) parts.push(data.K.val);
+  parts.push('YES');
+  if (data.M.val) parts.push('client ' + data.M.val);
+  var sentence = parts.join(', ') + '.';
+  sentence += ' Column A: next seq # in ' + (data.G.val || 'city') + ' cluster.';
+  sentence += ' Column N: leave blank.';
+  return sentence;
+}
+
+function setManSheetVisible(show, scroll) {
+  var wrap = document.getElementById('man-sheet-wrap');
+  var btn = document.getElementById('btn-toggle-man');
+  if (!wrap) return;
+  wrap.classList.toggle('show', !!show);
+  if (btn) btn.classList.toggle('active', !!show);
+  try { localStorage.setItem('intake_man_sheet_visible', show ? '1' : '0'); } catch (e) {}
+  if (show) {
+    renderManSheetPreview();
+    if (scroll !== false) wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+function toggleManSheetPanel() {
+  var wrap = document.getElementById('man-sheet-wrap');
+  setManSheetVisible(!(wrap && wrap.classList.contains('show')));
+}
+
+function renderManSheetPreview() {
+  var grid = document.getElementById('man-sheet-grid');
+  var warn = document.getElementById('man-sheet-warn');
+  var sentenceEl = document.getElementById('man-sheet-sentence');
+  if (!grid) return;
+  var data = buildManSheetData();
+  var cols = ['A','B','C','D','E','F','G','H','I','J','K','L','M'];
+  grid.innerHTML = cols.map(function(col) {
+    var d = data[col];
+    var cls = 'col-val' + (d.auto ? ' auto' : '') + (d.note ? ' note' : '') + (!d.val && !d.note ? ' missing' : '');
+    var display = d.note ? ('(' + d.label + ')') : (d.val || '(missing / falta)');
+    return '<span class="col-lbl">' + col + '</span><span class="' + cls + '">' + display + '</span>';
+  }).join('');
+  if (sentenceEl) sentenceEl.value = manSheetSentenceText();
+  if (warn) {
+    var msgs = [];
+    if (!data.C.val || !data.D.val) msgs.push('Name missing / Falta nombre');
+    if (!data.E.val) msgs.push('Source missing / Falta fuente');
+    if (!data.F.val) msgs.push('DOA missing / Falta fecha accidente');
+    if (!data.G.val) msgs.push('City missing / Falta ciudad');
+    if (!data.J.val) msgs.push('Clinic (J) missing — enter above / Falta clínica');
+    if (!data.M.val) {
+      var cv = getTog('client_vehicle-tg');
+      if (cv && !/^V[123]$/.test(cv)) msgs.push('Column M must be V1, V2, or V3 — pick in Case Info / Columna M debe ser V1, V2 o V3');
+      else msgs.push('Client vehicle (M) missing — pick V1/V2/V3 / Falta vehículo cliente');
+    }
+    warn.textContent = msgs.join(' · ');
+    warn.classList.toggle('show', msgs.length > 0);
+  }
+}
+
+function manSheetLabeledText() {
+  var data = buildManSheetData();
+  var cols = ['A','B','C','D','E','F','G','H','I','J','K','L','M'];
+  return cols.map(function(col) {
+    var d = data[col];
+    if (d.note) return col + ': (assign in sheet / asignar en hoja)';
+    return col + ': ' + (d.val || '');
+  }).join('\n') + '\n\n(N — PROCESADO: leave blank / dejar vacío)';
+}
+
+function manSheetTabRow(fromCol, toCol) {
+  var data = buildManSheetData();
+  var cols = ['A','B','C','D','E','F','G','H','I','J','K','L','M'];
+  var start = cols.indexOf(fromCol);
+  var end = cols.indexOf(toCol);
+  return cols.slice(start, end + 1).map(function(col) {
+    var d = data[col];
+    if (d.note) return '';
+    return d.val || '';
+  }).join('\t');
+}
+
+function copyManSheetSentence() {
+  var text = manSheetSentenceText();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function() { showToast('Sentence copied / Oración copiada'); }).catch(function() { window.prompt('Copy / Copiar:', text); });
+  } else { window.prompt('Copy / Copiar:', text); }
+}
+
+function copyManSheetLabeled() {
+  var text = manSheetLabeledText();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function() { showToast('MAN sheet copied / Hoja MAN copiada'); }).catch(function() { window.prompt('Copy / Copiar:', text); });
+  } else { window.prompt('Copy / Copiar:', text); }
+}
+
+function copyManSheetTabRow() {
+  var text = manSheetTabRow('B', 'M');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function() { showToast('B–M copied (Tab) — paste then Tab cell by cell / B–M copiado'); }).catch(function() { window.prompt('Copy / Copiar:', text); });
+  } else { window.prompt('Copy / Copiar:', text); }
+}
+
 function emailIntakeSummary() {
   var text = buildSummaryText();
   var subj = encodeURIComponent('Intake: ' + (v('name') || 'New client') + (v('dol') ? ' · DOL ' + formatDate(v('dol')) : ''));
@@ -3197,7 +3413,7 @@ function updateFillDots() {
   });
   updateNavPills();
 }
-function onFormSync() { updateFillDots(); updateProgress(); }
+function onFormSync() { updateFillDots(); updateProgress(); renderManSheetPreview(); }
 document.addEventListener('input', onFormSync);
 document.addEventListener('change', onFormSync);
 
